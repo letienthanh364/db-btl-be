@@ -8,7 +8,7 @@ import {
 } from 'typeorm';
 import { BaseEntity } from '../common/base_entity';
 import { ApiProperty } from '@nestjs/swagger';
-import { Role } from 'src/common/decorator/role';
+import { UserRole } from 'src/common/decorator/user_role';
 import { IsOptional } from 'class-validator';
 import { User } from 'src/user/user.entity';
 import { Optional } from '@nestjs/common';

@@ -15,6 +15,7 @@ import { UserCreateDto } from './dtos/user.create.dto';
 import 'dotenv/config';
 import { UserAddPagesDto } from './dtos/user.add_pages.dto';
 import { UserSimpleDto } from './dtos/user.simple.dto';
+import { UserRole } from 'src/common/decorator/user_role';
 
 @Injectable()
 export class UserService {
@@ -27,6 +28,22 @@ export class UserService {
 
   async findOne(id: string): Promise<User> {
     return this.userRepo.findOneBy({ id });
+  }
+
+  async register(user: UserCreateDto): Promise<User> {
+    const existingUser = await this.userRepo.findOne({
+      where: {
+        username: user.username,
+      },
+    });
+
+    if (existingUser) {
+      throw new BadRequestException('User already exists');
+    }
+
+    user.password = await bcrypt.hash(user.password, 10);
+
+    return this.userRepo.save(user);
   }
 
   // ! Create multiple accounts
@@ -50,6 +67,7 @@ export class UserService {
         }
 
         user.password = await bcrypt.hash(user.password, 10);
+        user.authority_group = UserRole.Employee;
       });
 
       await Promise.all(userPromises);

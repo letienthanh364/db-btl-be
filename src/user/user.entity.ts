@@ -1,7 +1,7 @@
 import { Column, Entity } from 'typeorm';
 import { BaseEntity } from '../common/base_entity';
 import { ApiProperty, PickType } from '@nestjs/swagger';
-import { Role } from 'src/common/decorator/role';
+import { UserRole } from 'src/common/decorator/user_role';
 import { IsOptional } from 'class-validator';
 
 @Entity('User')
@@ -17,14 +17,14 @@ export class User extends BaseEntity {
   @Column({ type: 'varchar' })
   password: string;
 
-  @ApiProperty({ description: 'The role of the user', enum: Role })
+  @ApiProperty({ description: 'The role of the user', enum: UserRole })
   @Column({
     type: 'enum',
-    enum: Role,
-    default: Role.User,
+    enum: UserRole,
+    default: UserRole.Customer,
   })
   @IsOptional()
-  authority_group: Role;
+  authority_group: UserRole;
 
   @Column({ type: 'int', default: 0 })
   available_pages: number;
