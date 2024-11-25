@@ -6,6 +6,7 @@ import { dataSource } from 'ormconfig';
 import { UserModule } from './user/user.module';
 import { AddressModule } from './address/address.module';
 import { MembershipModule } from './membership/membership.module';
+import { ProductCategoryModule } from './product-category/product-category.module';
 
 @Module({
   imports: [
@@ -13,6 +14,7 @@ import { MembershipModule } from './membership/membership.module';
     UserModule,
     AddressModule,
     MembershipModule,
+    ProductCategoryModule,
   ],
   controllers: [AppController],
   providers: [AppService],
