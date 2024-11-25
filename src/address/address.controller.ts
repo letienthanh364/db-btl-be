@@ -1,7 +1,7 @@
 import { Body, Controller, Get, Param, Post, Query } from '@nestjs/common';
 import { AddressService } from './address.service';
-import { AddressCreateDto } from './dtos/address.create';
-import { AddressSearchDto } from './dtos/address.search';
+import { AddressCreateDto } from './dtos/address.create.dto';
+import { AddressSearchDto } from './dtos/address.search.dto';
 import { PAGINATION_LIMIT } from 'src/common/paginated-result';
 
 @Controller('address')

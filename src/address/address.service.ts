@@ -2,8 +2,8 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { DataSource, Repository } from 'typeorm';
 import { Address } from './address.entity';
 import { InjectRepository } from '@nestjs/typeorm';
-import { AddressCreateDto } from './dtos/address.create';
-import { AddressSearchDto } from './dtos/address.search';
+import { AddressCreateDto } from './dtos/address.create.dto';
+import { AddressSearchDto } from './dtos/address.search.dto';
 import { PaginatedResult } from 'src/common/paginated-result';
 
 @Injectable()
