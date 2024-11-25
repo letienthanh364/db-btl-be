@@ -4,6 +4,7 @@ import { Address } from './address.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { AddressCreateDto } from './dtos/address.create';
 import { AddressSearchDto } from './dtos/address.search';
+import { PaginatedResult } from 'src/common/paginated-result';
 
 @Injectable()
 export class AddressService {
@@ -19,7 +20,7 @@ export class AddressService {
   }
 
   // ! Search with params
-  async search(params: AddressSearchDto): Promise<Address[]> {
+  async search(params: AddressSearchDto): Promise<PaginatedResult<Address>> {
     const query = this.addressRepo.createQueryBuilder('address');
     if (params.default_flag) {
       query.andWhere('address.default_flag = :default_flag', {
@@ -37,7 +38,28 @@ export class AddressService {
       });
     }
 
-    return query.getMany();
+    // Pagination logic
+    const page = params.page;
+    const limit = params.limit;
+    const offset = (page - 1) * limit;
+
+    query.skip(offset).take(limit);
+
+    const [result, total] = await query.getManyAndCount();
+
+    const numberOfPages = Math.ceil(total / limit);
+    const hasNext = page < numberOfPages;
+    const hasPrevious = page > 1;
+
+    return new PaginatedResult<Address>(
+      result,
+      total,
+      numberOfPages,
+      hasNext,
+      hasPrevious,
+      limit,
+      page,
+    );
   }
 
   // ! Create multiples
