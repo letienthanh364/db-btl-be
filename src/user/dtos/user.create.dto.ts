@@ -3,6 +3,13 @@ import { User } from '../user.entity';
 
 export class UserCreateDto extends PickType(User, [
   'name',
-  'username',
+  'email',
+  'password',
+] as const) {}
+
+export class UserRegisterDto extends PickType(User, [
+  'email',
+  'name',
+  'phone',
   'password',
 ] as const) {}

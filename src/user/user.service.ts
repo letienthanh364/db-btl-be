@@ -13,8 +13,6 @@ import * as bcrypt from 'bcryptjs';
 import { JwtPayload } from 'src/common/jwt/payload';
 import { UserCreateDto } from './dtos/user.create.dto';
 import 'dotenv/config';
-import { UserAddPagesDto } from './dtos/user.add_pages.dto';
-import { UserSimpleDto } from './dtos/user.simple.dto';
 import { UserRole } from 'src/common/decorator/user_role';
 
 @Injectable()
@@ -33,12 +31,12 @@ export class UserService {
   async register(user: UserCreateDto): Promise<User> {
     const existingUser = await this.userRepo.findOne({
       where: {
-        username: user.username,
+        email: user.email,
       },
     });
 
     if (existingUser) {
-      throw new BadRequestException('User already exists');
+      throw new BadRequestException('email is already used');
     }
 
     user.password = await bcrypt.hash(user.password, 10);
@@ -58,7 +56,7 @@ export class UserService {
       const userPromises = newUsers.map(async (user) => {
         let existingUser = await this.userRepo.findOne({
           where: {
-            username: user.username,
+            email: user.email,
           },
         });
 
@@ -89,7 +87,7 @@ export class UserService {
   async login(userData: UserLoginDto): Promise<string> {
     const user = await this.userRepo.findOne({
       where: {
-        username: userData.username,
+        email: userData.email,
       },
     });
 
@@ -110,23 +108,6 @@ export class UserService {
       return this.jwtService.sign(payload);
     }
 
-    throw new UnauthorizedException('login failed');
-  }
-
-  async addPages(dto: UserAddPagesDto): Promise<UserSimpleDto> {
-    const user = await this.userRepo.findOne({
-      where: {
-        id: dto.id,
-      },
-    });
-
-    if (!user) {
-      throw new NotFoundException('User not found');
-    }
-
-    user.available_pages = user.available_pages + dto.pages;
-    this.userRepo.save(user);
-
-    return { name: user.name, available_pages: user.available_pages };
+    throw new UnauthorizedException('login information incorrect');
   }
 }
