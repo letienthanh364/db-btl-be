@@ -1,0 +1,80 @@
+import { BadRequestException, Injectable } from '@nestjs/common';
+import { DataSource, Repository } from 'typeorm';
+import { Address } from './address.entity';
+import { InjectRepository } from '@nestjs/typeorm';
+import { AddressCreateDto } from './dtos/address.create';
+import { AddressSearchDto } from './dtos/address.search';
+
+@Injectable()
+export class AddressService {
+  constructor(
+    @InjectRepository(Address)
+    private readonly addressRepo: Repository<Address>,
+    private readonly dataSource: DataSource,
+  ) {}
+
+  // ! Find by id
+  async findOne(id: string): Promise<Address> {
+    return this.addressRepo.findOneBy({ id });
+  }
+
+  // ! Search with params
+  async search(params: AddressSearchDto): Promise<Address[]> {
+    const query = this.addressRepo.createQueryBuilder('address');
+    if (params.default_flag) {
+      query.andWhere('address.default_flag = :default_flag', {
+        default_flag: params.default_flag,
+      });
+    }
+
+    if (params.city) {
+      query.andWhere('address.city = :city', { city: params.city });
+    }
+
+    if (params.district) {
+      query.andWhere('address.district = :district', {
+        district: params.district,
+      });
+    }
+
+    return query.getMany();
+  }
+
+  // ! Create multiples
+  async create(addresss: AddressCreateDto[]): Promise<Address[]> {
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
+    try {
+      const newAddresss = queryRunner.manager.create(Address, addresss);
+
+      const addressPromises = newAddresss.map(async (address) => {
+        let existingAddress = await this.addressRepo.findOne({
+          where: {
+            default_flag: address.default_flag,
+            city: address.city,
+            district: address.district,
+          },
+        });
+
+        if (existingAddress) {
+          throw new BadRequestException('address already exists');
+        }
+      });
+
+      await Promise.all(addressPromises);
+
+      await queryRunner.manager.save(Address, newAddresss);
+
+      await queryRunner.commitTransaction();
+
+      return newAddresss;
+    } catch (error) {
+      await queryRunner.rollbackTransaction();
+      throw new BadRequestException(error.message);
+    } finally {
+      await queryRunner.release();
+    }
+  }
+}
