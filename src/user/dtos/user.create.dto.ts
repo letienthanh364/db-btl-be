@@ -5,6 +5,9 @@ export class UserCreateDto extends PickType(User, [
   'name',
   'email',
   'password',
+  'authority_group',
+  'department',
+  'position',
 ] as const) {}
 
 export class UserRegisterDto extends PickType(User, [

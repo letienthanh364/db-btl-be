@@ -1,6 +1,6 @@
 import { Column, CreateDateColumn, Entity } from 'typeorm';
 import { BaseEntity } from '../common/base_entity';
-import { ApiProperty, PickType } from '@nestjs/swagger';
+import { ApiProperty, OmitType, PickType } from '@nestjs/swagger';
 import { UserRole } from 'src/common/decorator/user_role';
 import { IsOptional } from 'class-validator';
 
@@ -26,8 +26,25 @@ export class User extends BaseEntity {
   @IsOptional()
   authority_group: UserRole;
 
-  @Column({ type: 'varchar', nullable: false })
+  @Column({ type: 'varchar' })
   phone: string;
+
+  @Column({ type: 'varchar', nullable: true, default: '' })
+  department: string;
+
+  @Column({ type: 'varchar', nullable: true, default: '' })
+  position: string;
+
+  @Column({ type: 'int', nullable: true, default: 0 })
+  point: string;
 }
+
+export class Employee extends OmitType(User, ['point']) {}
+
+export class Customer extends OmitType(User, [
+  'department',
+  'position',
+  'authority_group',
+]) {}
 
 export class UserSimple extends PickType(User, ['id', 'name']) {}

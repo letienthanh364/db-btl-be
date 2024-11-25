@@ -8,7 +8,7 @@ import {
   Req,
   UseGuards,
 } from '@nestjs/common';
-import { UserCreateDto } from './dtos/user.create.dto';
+import { UserCreateDto, UserRegisterDto } from './dtos/user.create.dto';
 import { UserLoginDto } from './dtos/user.login.dto';
 import { UserService } from './user.service';
 import { JwtAuthGuard } from 'src/common/auth/strategy';
@@ -22,9 +22,9 @@ export interface RequestUser extends Request {
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
-  @Post('create-users')
+  @Post('employee')
   async create(@Body() users: UserCreateDto[]) {
-    const newUsers = await this.userService.createMultipleUsers(users);
+    const newUsers = await this.userService.createEmployees(users);
     const simpleUsers = newUsers.map((user) => {
       const { password, deleted_at, ...res } = user;
       return res;
@@ -37,7 +37,7 @@ export class UserController {
   }
 
   @Post('register')
-  async register(@Body() user: UserCreateDto) {
+  async register(@Body() user: UserRegisterDto) {
     const newUser = await this.userService.register(user);
     const { password, ...res } = newUser;
     return res;

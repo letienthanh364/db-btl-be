@@ -6,12 +6,12 @@ import {
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
-import { User } from 'src/user/user.entity';
+import { Customer, Employee, User } from 'src/user/user.entity';
 import { DataSource, Repository } from 'typeorm';
 import { UserLoginDto } from './dtos/user.login.dto';
 import * as bcrypt from 'bcryptjs';
 import { JwtPayload } from 'src/common/jwt/payload';
-import { UserCreateDto } from './dtos/user.create.dto';
+import { UserCreateDto, UserRegisterDto } from './dtos/user.create.dto';
 import 'dotenv/config';
 import { UserRole } from 'src/common/decorator/user_role';
 
@@ -28,7 +28,7 @@ export class UserService {
     return this.userRepo.findOneBy({ id });
   }
 
-  async register(user: UserCreateDto): Promise<User> {
+  async register(user: UserRegisterDto): Promise<Customer> {
     const existingUser = await this.userRepo.findOne({
       where: {
         email: user.email,
@@ -41,11 +41,13 @@ export class UserService {
 
     user.password = await bcrypt.hash(user.password, 10);
 
-    return this.userRepo.save(user);
+    const newUser = await this.userRepo.save(user);
+    const { department, position, authority_group, ...newCustomer } = newUser;
+    return newCustomer;
   }
 
   // ! Create multiple accounts
-  async createMultipleUsers(users: UserCreateDto[]): Promise<User[]> {
+  async createEmployees(users: UserCreateDto[]): Promise<Employee[]> {
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
@@ -74,7 +76,11 @@ export class UserService {
 
       await queryRunner.commitTransaction();
 
-      return newUsers;
+      const newEmployees = newUsers.map((user) => {
+        const { point, ...res } = user;
+        return res;
+      });
+      return newEmployees;
     } catch (error) {
       await queryRunner.rollbackTransaction();
       throw new BadRequestException(error.message);
