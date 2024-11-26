@@ -9,6 +9,7 @@ import { ProductCategoryModule } from './product-category/product-category.modul
 import { ProductModule } from './product/product.module';
 import { AddressModule } from './address/address.module';
 import { CartModule } from './cart/cart.module';
+import { ReviewModule } from './review/review.module';
 
 @Module({
   imports: [
@@ -19,6 +20,7 @@ import { CartModule } from './cart/cart.module';
     ProductCategoryModule,
     ProductModule,
     CartModule,
+    ReviewModule,
   ],
   controllers: [AppController],
   providers: [AppService],
