@@ -5,6 +5,8 @@ import {
   Param,
   ParseUUIDPipe,
   Post,
+  Put,
+  Query,
   Req,
   UseGuards,
 } from '@nestjs/common';
@@ -13,6 +15,7 @@ import { UserLoginDto } from './dtos/user.login.dto';
 import { UserService } from './user.service';
 import { JwtAuthGuard } from 'src/common/auth/strategy';
 import { User } from './user.entity';
+import { UserUpdateDto } from './dtos/user.update.dto';
 
 export interface RequestUser extends Request {
   user: User;
@@ -65,5 +68,21 @@ export class UserController {
     // Exclude sensitive fields like password and deleted_at
     const { password, deleted_at, ...userDetails } = user;
     return userDetails;
+  }
+
+  // @UseGuards(JwtAuthGuard)
+  @Put(':id')
+  async update(
+    @Param('id', new ParseUUIDPipe()) userId: string,
+    @Body() userData: UserUpdateDto,
+  ): Promise<Partial<User>> {
+    const user = await this.userService.update({
+      ...userData,
+      id: userId,
+    });
+
+    // Exclude sensitive fields like password and deleted_at
+    const { password, deleted_at, ...userResponse } = user;
+    return userResponse;
   }
 }

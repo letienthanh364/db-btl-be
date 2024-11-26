@@ -15,6 +15,7 @@ import { UserCreateDto, UserRegisterDto } from './dtos/user.create.dto';
 import 'dotenv/config';
 import { UserRole } from 'src/common/decorator/user_role';
 import { Membership } from 'src/membership/membership.entity';
+import { UserUpdateDto } from './dtos/user.update.dto';
 
 @Injectable()
 export class UserService {
@@ -59,7 +60,7 @@ export class UserService {
     try {
       const newUsers = queryRunner.manager.create(User, users);
 
-      const userPromises = newUsers.map(async (user) => {
+      const userPromises = newUsers.map(async (user, index) => {
         let existingUser = await this.userRepo.findOne({
           where: {
             email: user.email,
@@ -119,5 +120,44 @@ export class UserService {
     }
 
     throw new UnauthorizedException('login information incorrect');
+  }
+
+  async update(userData: UserUpdateDto): Promise<User> {
+    const { id: userId, membership_id, ...updateFields } = userData;
+
+    // Find the user by ID
+    const user = await this.userRepo.findOneBy({ id: userId });
+
+    if (!user) {
+      throw new NotFoundException(`User with id "${userId}" not found`);
+    }
+
+    // Update membership if membership_id is provided
+    if (membership_id) {
+      const membership = await this.membershipRepo.findOneBy({
+        id: membership_id,
+      });
+
+      if (!membership) {
+        throw new NotFoundException(
+          `Membership with id "${membership_id}" not found`,
+        );
+      }
+
+      user.membership = membership;
+    }
+
+    // Update other fields
+    Object.assign(user, updateFields);
+
+    // Save the updated user
+    await this.userRepo.save(user);
+
+    return this.userRepo
+      .createQueryBuilder('user')
+      .leftJoin('user.membership', 'membership')
+      .addSelect(['membership.name'])
+      .where('user.id = :id', { id: user.id })
+      .getOne();
   }
 }

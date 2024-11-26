@@ -8,7 +8,9 @@ export class UserCreateDto extends PickType(User, [
   'authority_group',
   'department',
   'position',
-] as const) {}
+] as const) {
+  membership_id: string;
+}
 
 export class UserRegisterDto extends PickType(User, [
   'email',
