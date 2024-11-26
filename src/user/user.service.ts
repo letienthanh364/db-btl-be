@@ -14,12 +14,16 @@ import { JwtPayload } from 'src/common/jwt/payload';
 import { UserCreateDto, UserRegisterDto } from './dtos/user.create.dto';
 import 'dotenv/config';
 import { UserRole } from 'src/common/decorator/user_role';
+import { Membership } from 'src/membership/membership.entity';
 
 @Injectable()
 export class UserService {
   constructor(
     @InjectRepository(User)
     private readonly userRepo: Repository<User>,
+
+    @InjectRepository(Membership)
+    private readonly membershipRepo: Repository<Membership>,
     private readonly jwtService: JwtService,
     private readonly dataSource: DataSource,
   ) {}

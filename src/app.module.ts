@@ -10,6 +10,7 @@ import { ProductModule } from './product/product.module';
 import { AddressModule } from './address/address.module';
 import { CartModule } from './cart/cart.module';
 import { ReviewModule } from './review/review.module';
+import { OrderModule } from './order/order.module';
 
 @Module({
   imports: [
@@ -21,6 +22,7 @@ import { ReviewModule } from './review/review.module';
     ProductModule,
     CartModule,
     ReviewModule,
+    OrderModule,
   ],
   controllers: [AppController],
   providers: [AppService],
