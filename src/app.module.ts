@@ -7,6 +7,7 @@ import { UserModule } from './user/user.module';
 import { AddressModule } from './address/address.module';
 import { MembershipModule } from './membership/membership.module';
 import { ProductCategoryModule } from './product-category/product-category.module';
+import { ProductModule } from './product/product.module';
 
 @Module({
   imports: [
@@ -15,6 +16,7 @@ import { ProductCategoryModule } from './product-category/product-category.modul
     AddressModule,
     MembershipModule,
     ProductCategoryModule,
+    ProductModule,
   ],
   controllers: [AppController],
   providers: [AppService],

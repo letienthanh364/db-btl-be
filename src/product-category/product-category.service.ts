@@ -3,7 +3,7 @@ import { DataSource, Repository } from 'typeorm';
 import { ProductCategory } from './product-category.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ProductCategoryCreateDto } from './dtos/product-category.create.dto';
-import { ProductCategorySearchDto } from './dtos/product-category.search.dtp';
+import { ProductCategorySearchDto } from './dtos/product-category.search.dto';
 import { PaginatedResult } from 'src/common/paginated-result';
 
 @Injectable()
