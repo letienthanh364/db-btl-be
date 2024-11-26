@@ -19,7 +19,7 @@ export class ProductController {
     @Query('price') price?: number,
     @Query('reorder_point') reorder_point?: string,
     @Query('description') description?: string,
-    @Query('category_id') category_id?: string,
+    @Query('category') category?: string,
     @Query('page') page?: number,
     @Query('limit') limit?: number,
   ) {
@@ -28,7 +28,7 @@ export class ProductController {
       price,
       reorder_point,
       description,
-      category_id,
+      category: category.toLowerCase(),
       page: page || 1,
       limit: limit || PAGINATION_LIMIT,
     };

@@ -7,7 +7,7 @@ export class ProductSearchDto extends PartialType(
   PickType(Product, ['name', 'price', 'reorder_point', 'description'] as const),
 ) {
   @Optional()
-  category_id?: string;
+  category?: string;
 
   @ApiPropertyOptional({
     description: 'Page number for pagination',

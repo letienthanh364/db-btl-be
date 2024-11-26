@@ -31,7 +31,8 @@ export class ProductService {
   async search(params: ProductSearchDto): Promise<PaginatedResult<Product>> {
     const query = this.productRepo
       .createQueryBuilder('product')
-      .leftJoinAndSelect('product.category', 'category');
+      .leftJoin('product.category', 'category')
+      .addSelect(['category.id', 'category.description', 'category.name']);
     if (params.name) {
       query.andWhere('product.name = :name', {
         name: params.name,
@@ -56,12 +57,10 @@ export class ProductService {
       });
     }
 
-    if (params.category_id && isUUID(params.category_id)) {
-      query.andWhere('product.category_id = :category_id', {
-        category_id: params.category_id,
+    if (params.category) {
+      query.andWhere('category.name = :categoryName', {
+        categoryName: params.category,
       });
-    } else if (params.category_id) {
-      throw new BadRequestException('Invalid category_id format');
     }
 
     // Pagination logic
