@@ -4,10 +4,11 @@ import { AppService } from './app.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { dataSource } from 'ormconfig';
 import { UserModule } from './user/user.module';
-import { AddressModule } from './address/address.module';
 import { MembershipModule } from './membership/membership.module';
 import { ProductCategoryModule } from './product-category/product-category.module';
 import { ProductModule } from './product/product.module';
+import { AddressModule } from './address/address.module';
+import { CartModule } from './cart/cart.module';
 
 @Module({
   imports: [
@@ -17,6 +18,7 @@ import { ProductModule } from './product/product.module';
     MembershipModule,
     ProductCategoryModule,
     ProductModule,
+    CartModule,
   ],
   controllers: [AppController],
   providers: [AppService],

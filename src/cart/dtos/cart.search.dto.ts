@@ -1,10 +1,9 @@
-import { PickType, PartialType, ApiPropertyOptional } from '@nestjs/swagger';
+import { ApiPropertyOptional } from '@nestjs/swagger';
 import { PAGINATION_LIMIT } from 'src/common/paginated-result';
-import { Address } from '../address.entity';
 
-export class AddressSearchDto extends PartialType(
-  PickType(Address, ['default_flag', 'city', 'district'] as const),
-) {
+export class CartSearchDto {
+  user_id: string;
+
   @ApiPropertyOptional({
     description: 'Page number for pagination',
     example: 1,
