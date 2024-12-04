@@ -28,7 +28,7 @@ export class ProductController {
       price,
       reorder_point,
       description,
-      category: category.toLowerCase(),
+      category: category && category.toLowerCase(),
       page: page || 1,
       limit: limit || PAGINATION_LIMIT,
     };
