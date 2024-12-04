@@ -16,6 +16,7 @@ export class ProductController {
   @Get('')
   async search(
     @Query('name') name?: string,
+    @Query('keyword') keyword?: string,
     @Query('price') price?: number,
     @Query('reorder_point') reorder_point?: string,
     @Query('description') description?: string,
@@ -25,6 +26,7 @@ export class ProductController {
   ) {
     const searchDto: ProductSearchDto = {
       name,
+      keyword,
       price,
       reorder_point,
       description,

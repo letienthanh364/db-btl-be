@@ -33,6 +33,7 @@ export class ProductService {
       .createQueryBuilder('product')
       .leftJoin('product.category', 'category')
       .addSelect(['category.id', 'category.description', 'category.name']);
+
     if (params.name) {
       query.andWhere('product.name = :name', {
         name: params.name,
@@ -63,9 +64,18 @@ export class ProductService {
       });
     }
 
+    if (params.keyword) {
+      query.andWhere(
+        '(LOWER(product.name) LIKE LOWER(:keyword) OR LOWER(product.description) LIKE LOWER(:keyword) OR LOWER(category.name) LIKE LOWER(:keyword))',
+        {
+          keyword: `%${params.keyword.toLowerCase()}%`,
+        },
+      );
+    }
+
     // Pagination logic
-    const page = params.page;
-    const limit = params.limit;
+    const page = params.page || 1;
+    const limit = params.limit || 10;
     const offset = (page - 1) * limit;
 
     query.skip(offset).take(limit);

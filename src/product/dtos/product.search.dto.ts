@@ -9,6 +9,9 @@ export class ProductSearchDto extends PartialType(
   @Optional()
   category?: string;
 
+  @Optional()
+  keyword?: string;
+
   @ApiPropertyOptional({
     description: 'Page number for pagination',
     example: 1,
