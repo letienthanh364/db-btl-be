@@ -7,6 +7,8 @@ import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { LocalStrategy } from '../common/auth/strategy';
 import { Membership } from 'src/membership/membership.entity';
+import { CartModule } from 'src/cart/cart.module';
+import { CartService } from 'src/cart/cart.service';
 
 @Module({
   imports: [
@@ -16,9 +18,10 @@ import { Membership } from 'src/membership/membership.entity';
       secret: process.env.JWT_SECRET_KEY,
       signOptions: { expiresIn: '1y' },
     }),
+    CartModule,
   ],
   exports: [TypeOrmModule.forFeature([User])],
-  providers: [UserService, LocalStrategy],
+  providers: [UserService, LocalStrategy, CartService],
   controllers: [UserController],
 })
 export class UserModule {}

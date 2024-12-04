@@ -10,6 +10,8 @@ import { CartCreateDto } from './dtos/cart.create.dto';
 import { CartSearchDto } from './dtos/cart.search.dto';
 import { PaginatedResult } from 'src/common/paginated-result';
 import { Product } from 'src/product/product.entity';
+import { CartUpdateDto } from './dtos/cart.update.dto';
+import { CartDeleteProductDto } from './dtos/cart.delete.dto';
 
 @Injectable()
 export class CartService {
@@ -70,59 +72,66 @@ export class CartService {
     );
   }
 
-  // ! Create
-  async create(cartCreateDto: CartCreateDto): Promise<Cart> {
-    const { user_id, cart_products } = cartCreateDto;
+  // ! Create or update
+  async createOrUpdateCartProduct(
+    cartCreateOrUpdateDto: CartCreateDto & {
+      product_id: string;
+      newQuantity: number;
+    },
+  ): Promise<Cart> {
+    const { user_id, product_id, newQuantity } = cartCreateOrUpdateDto;
 
-    // Find if the user already has a cart
+    if (newQuantity <= 0) {
+      throw new BadRequestException('Quantity must be greater than zero');
+    }
+
+    // Check if a cart exists for the user
     let cart = await this.cartRepo.findOne({
       where: { user: { id: user_id } },
       relations: ['cart_products', 'cart_products.product'],
     });
 
-    if (!cart) {
-      // Create a new cart if none exists
-      cart = this.cartRepo.create({ user: { id: user_id }, cart_products: [] });
-      cart = await this.cartRepo.save(cart);
+    // Validate the product
+    const product = await this.productRepo.findOne({
+      where: { id: product_id },
+    });
+    if (!product) {
+      throw new NotFoundException(`Product with id ${product_id} not found`);
     }
 
-    for (const cartProductDto of cart_products) {
-      const { product_id, quantity } = cartProductDto;
+    if (!cart) {
+      // Create a new cart if it doesn't exist
+      cart = this.cartRepo.create({ user: { id: user_id }, cart_products: [] });
+      cart = await this.cartRepo.save(cart);
 
-      // Validate the product exists
-      const product = await this.productRepo.findOne({
-        where: { id: product_id },
+      // Add the new cart product to the newly created cart
+      const cartProduct = this.cartProductRepo.create({
+        cart,
+        product,
+        quantity: newQuantity,
       });
-      if (!product) {
-        throw new NotFoundException(`Product with id ${product_id} not found`);
-      }
-
-      if (quantity === 0) {
-        throw new BadRequestException(
-          `Invalid quantity for product "${product.name}"`,
-        );
-      }
-
-      // Check if the product already exists in the cart
+      cart.cart_products.push(cartProduct);
+      await this.cartProductRepo.save(cartProduct);
+    } else {
+      // If the cart exists, check if the product is already in the cart
       let cartProduct = cart.cart_products.find(
         (cp) => cp.product.id === product_id,
       );
 
       if (cartProduct) {
         // Update the quantity if the product exists
-        cartProduct.quantity += Number(quantity);
+        cartProduct.quantity = newQuantity;
+        await this.cartProductRepo.save(cartProduct);
       } else {
-        // Add the product to the cart if it doesn't exist
+        // Add the new cart product if it doesn't exist
         cartProduct = this.cartProductRepo.create({
           cart,
           product,
-          quantity,
+          quantity: newQuantity,
         });
         cart.cart_products.push(cartProduct);
+        await this.cartProductRepo.save(cartProduct);
       }
-
-      // Save the cartProduct
-      await this.cartProductRepo.save(cartProduct);
     }
 
     // Return the updated cart
@@ -130,13 +139,63 @@ export class CartService {
       .createQueryBuilder('cart')
       .leftJoinAndSelect('cart.cart_products', 'cartProduct')
       .leftJoinAndSelect('cartProduct.product', 'product')
-      .select([
-        'cart',
-        'product.id', // Select product ID
-        'product.name', // Select product name
-        'cartProduct.quantity', // Select cartProduct quantity
-      ])
-      .where('cart.id = :cartId', { cartId: cart.id })
+      .select(['cart', 'product.id', 'product.name', 'cartProduct.quantity'])
+      .where('cart.user.id = :userId', { userId: user_id })
       .getOne();
+  }
+
+  // ! Delete a cart product
+  async deleteCartProduct(data: CartDeleteProductDto): Promise<Cart> {
+    const { userId, productId } = data;
+
+    const cart = await this.cartRepo.findOne({
+      where: { user: { id: userId } },
+      relations: ['cart_products', 'cart_products.product'],
+    });
+
+    if (!cart) {
+      throw new NotFoundException(`Cart for user with id ${userId} not found`);
+    }
+
+    const cartProduct = cart.cart_products.find(
+      (cp) => cp.product.id === productId,
+    );
+
+    if (!cartProduct) {
+      throw new NotFoundException(
+        `Product with id ${productId} not found in the cart`,
+      );
+    }
+
+    await this.cartProductRepo.remove(cartProduct);
+
+    // Reload the cart with updated products
+    return this.cartRepo
+      .createQueryBuilder('cart')
+      .leftJoinAndSelect('cart.cart_products', 'cartProduct')
+      .leftJoinAndSelect('cartProduct.product', 'product')
+      .select(['cart', 'product.id', 'product.name', 'cartProduct.quantity'])
+      .where('cart.user.id = :userId', { userId })
+      .getOne();
+  }
+
+  // ! Get cart products for user
+  async getCartProducts(userId: string) {
+    const cart = await this.cartRepo.findOne({
+      where: { user: { id: userId } },
+      relations: ['cart_products', 'cart_products.product'],
+    });
+
+    if (!cart) {
+      throw new NotFoundException(`No cart found for user with id ${userId}`);
+    }
+
+    return cart.cart_products.map((cartProduct) => ({
+      ...cartProduct,
+      product: {
+        id: cartProduct.product.id,
+        name: cartProduct.product.name,
+      },
+    }));
   }
 }

@@ -10,7 +10,7 @@ export class CartController {
 
   @Post('')
   async create(@Body() data: CartCreateDto) {
-    return this.cartService.create(data);
+    return this.cartService.createOrUpdateCartProduct(data);
   }
 
   @Get('')

@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   ParseUUIDPipe,
@@ -16,6 +17,7 @@ import { UserService } from './user.service';
 import { JwtAuthGuard } from 'src/common/auth/strategy';
 import { User } from './user.entity';
 import { UserUpdateDto } from './dtos/user.update.dto';
+import { CartService } from 'src/cart/cart.service';
 
 export interface RequestUser extends Request {
   user: User;
@@ -23,7 +25,10 @@ export interface RequestUser extends Request {
 
 @Controller('user')
 export class UserController {
-  constructor(private readonly userService: UserService) {}
+  constructor(
+    private readonly userService: UserService,
+    private readonly cartService: CartService,
+  ) {}
 
   @Post('employee')
   async create(@Body() users: UserCreateDto[]) {
@@ -52,14 +57,6 @@ export class UserController {
   }
 
   @UseGuards(JwtAuthGuard)
-  @Get(':id')
-  async getUserById(
-    @Param('id', new ParseUUIDPipe()) id: string,
-  ): Promise<User> {
-    return this.userService.findOne(id);
-  }
-
-  @UseGuards(JwtAuthGuard)
   @Get()
   async getCurrentUser(@Req() req: RequestUser): Promise<Partial<User>> {
     const userId = req.user.id;
@@ -84,5 +81,56 @@ export class UserController {
     // Exclude sensitive fields like password and deleted_at
     const { password, deleted_at, ...userResponse } = user;
     return userResponse;
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('cart')
+  async addToCart(
+    @Body() body: { product_id: string; quantity: number },
+    @Req() req: RequestUser,
+  ) {
+    const { product_id, quantity } = body;
+    const user_id = req.user.id;
+
+    const updatedCart = await this.cartService.createOrUpdateCartProduct({
+      user_id,
+      product_id,
+      newQuantity: quantity,
+    });
+
+    return updatedCart;
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('cart')
+  async getCart(@Req() req: RequestUser) {
+    const user_id = req.user.id;
+    const cartProducts = await this.cartService.getCartProducts(user_id);
+
+    return cartProducts;
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Delete('cart/:productId')
+  async removeCartProduct(
+    @Param('productId', new ParseUUIDPipe()) productId: string,
+    @Req() req: RequestUser,
+  ) {
+    const user_id = req.user.id;
+
+    const updatedCart = await this.cartService.deleteCartProduct({
+      userId: user_id,
+      productId,
+    });
+
+    return updatedCart;
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get(':id')
+  async getUserById(
+    @Param('id', new ParseUUIDPipe()) id: string,
+  ): Promise<User> {
+    return this.userService.findOne(id);
   }
 }
