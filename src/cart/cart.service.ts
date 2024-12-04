@@ -195,6 +195,8 @@ export class CartService {
       product: {
         id: cartProduct.product.id,
         name: cartProduct.product.name,
+        price: cartProduct.product.price,
+        image_url: cartProduct.product.image_url,
       },
     }));
   }
