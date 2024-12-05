@@ -16,7 +16,7 @@ import {
 
 @Entity('Order')
 export class Order extends BaseEntity {
-  @OneToOne(() => User)
+  @ManyToOne(() => User)
   @JoinColumn({ name: 'user_id', referencedColumnName: 'id' })
   user: User;
 

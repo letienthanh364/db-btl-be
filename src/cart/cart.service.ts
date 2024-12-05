@@ -79,6 +79,7 @@ export class CartService {
       newQuantity: number;
     },
   ): Promise<Cart> {
+    console.log(cartCreateOrUpdateDto);
     const { user_id, product_id, newQuantity } = cartCreateOrUpdateDto;
 
     if (newQuantity <= 0) {

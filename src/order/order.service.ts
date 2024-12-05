@@ -134,6 +134,12 @@ export class OrderService {
         );
       }
 
+      if (item.quantity > product.inventory_quantity) {
+        throw new BadRequestException(
+          `Product "${product.name}" has only ${product.inventory_quantity} items in stock.`,
+        );
+      }
+
       products.push({
         product,
         quantity: item.quantity,
@@ -227,6 +233,8 @@ export class OrderService {
         'orderProduct.unit_price',
         'product.id',
         'product.name',
+        'product.image_url',
+        'product.price',
       ])
       .where('order.id = :id', { id: savedOrder.id })
       .getOne();

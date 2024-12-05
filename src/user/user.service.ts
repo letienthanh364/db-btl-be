@@ -30,7 +30,10 @@ export class UserService {
   ) {}
 
   async findOne(id: string): Promise<User> {
-    return this.userRepo.findOneBy({ id });
+    return this.userRepo.findOne({
+      where: { id },
+      relations: ['membership'], // Include the membership relation
+    });
   }
 
   async register(user: UserRegisterDto): Promise<Customer> {
