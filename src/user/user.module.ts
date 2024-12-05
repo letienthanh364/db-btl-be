@@ -9,6 +9,8 @@ import { LocalStrategy } from '../common/auth/strategy';
 import { Membership } from 'src/membership/membership.entity';
 import { CartModule } from 'src/cart/cart.module';
 import { CartService } from 'src/cart/cart.service';
+import { OrderService } from 'src/order/order.service';
+import { OrderModule } from 'src/order/order.module';
 
 @Module({
   imports: [
@@ -19,9 +21,10 @@ import { CartService } from 'src/cart/cart.service';
       signOptions: { expiresIn: '1y' },
     }),
     CartModule,
+    OrderModule,
   ],
   exports: [TypeOrmModule.forFeature([User])],
-  providers: [UserService, LocalStrategy, CartService],
+  providers: [UserService, LocalStrategy, CartService, OrderService],
   controllers: [UserController],
 })
 export class UserModule {}

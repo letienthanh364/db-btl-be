@@ -3,13 +3,13 @@ import { OrderStatus } from 'src/common/decorator/order_status';
 import { PAGINATION_LIMIT } from 'src/common/paginated-result';
 
 export class OrderSearchDto {
-  user_id: string;
+  user_id?: string;
 
-  product_id: string;
+  product_id?: string;
 
-  status: OrderStatus;
+  status?: OrderStatus;
 
-  order_date: Date;
+  order_date?: Date;
 
   @ApiPropertyOptional({
     description: 'Page number for pagination',

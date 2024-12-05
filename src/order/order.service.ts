@@ -8,7 +8,7 @@ import { Order, OrderProduct } from './order.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { OrderCreateDto } from './dtos/order.create.dto';
 import { OrderSearchDto } from './dtos/order.search.dto';
-import { PaginatedResult } from 'src/common/paginated-result';
+import { PaginatedResult, PAGINATION_LIMIT } from 'src/common/paginated-result';
 import { Product } from 'src/product/product.entity';
 import { Cart, CartProduct } from 'src/cart/cart.entity';
 import { User } from 'src/user/user.entity';
@@ -84,8 +84,8 @@ export class OrderService {
     }
 
     // Pagination logic
-    const page = params.page;
-    const limit = params.limit;
+    const page = params.page || 1;
+    const limit = params.limit || 100;
     const offset = (page - 1) * limit;
 
     query.skip(offset).take(limit);

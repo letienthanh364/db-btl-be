@@ -18,6 +18,9 @@ import { JwtAuthGuard } from 'src/common/auth/strategy';
 import { User } from './user.entity';
 import { UserUpdateDto } from './dtos/user.update.dto';
 import { CartService } from 'src/cart/cart.service';
+import { OrderService } from 'src/order/order.service';
+import { PAGINATION_LIMIT } from 'src/common/paginated-result';
+import { OrderSearchDto } from 'src/order/dtos/order.search.dto';
 
 export interface RequestUser extends Request {
   user: User;
@@ -28,6 +31,7 @@ export class UserController {
   constructor(
     private readonly userService: UserService,
     private readonly cartService: CartService,
+    private readonly orderService: OrderService,
   ) {}
 
   @Post('employee')
@@ -81,6 +85,24 @@ export class UserController {
     // Exclude sensitive fields like password and deleted_at
     const { password, deleted_at, ...userResponse } = user;
     return userResponse;
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('order')
+  async getOrderList(
+    @Req() req: RequestUser,
+    @Query('page') page: number = 1,
+    @Query('limit') limit: number = PAGINATION_LIMIT,
+  ) {
+    const user_id = req.user.id;
+    const searchDto: OrderSearchDto = {
+      user_id,
+      page: page || 1,
+      limit: limit || PAGINATION_LIMIT,
+    };
+    const orders = await this.orderService.search(searchDto);
+
+    return orders;
   }
 
   @UseGuards(JwtAuthGuard)
