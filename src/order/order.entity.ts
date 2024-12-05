@@ -29,7 +29,7 @@ export class Order extends BaseEntity {
   @Column({
     type: 'enum',
     enum: OrderStatus,
-    default: OrderStatus.Checking,
+    default: OrderStatus.AwaitPayment,
   })
   @IsOptional()
   status: OrderStatus;

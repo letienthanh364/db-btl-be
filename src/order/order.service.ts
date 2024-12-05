@@ -41,7 +41,20 @@ export class OrderService {
 
   // ! Find by id
   async findOne(id: string): Promise<Order> {
-    return this.orderRepo.findOneBy({ id });
+    return this.orderRepo
+      .createQueryBuilder('order')
+      .leftJoin('order.order_products', 'orderProduct')
+      .leftJoin('orderProduct.product', 'product')
+      .addSelect([
+        'product.id',
+        'product.name',
+        'product.image_url',
+        'product.price',
+        'orderProduct.quantity',
+        'orderProduct.unit_price',
+      ])
+      .where('order.id = :id', { id })
+      .getOne();
   }
 
   // ! Search with params
@@ -172,7 +185,7 @@ export class OrderService {
       deduct_amount: deductAmount,
       remain_amount: remainAmount,
       tax,
-      status: OrderStatus.Checking,
+      status: OrderStatus.AwaitPayment,
     });
 
     const savedOrder = await this.orderRepo.save(order);

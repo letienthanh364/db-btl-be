@@ -1,8 +1,8 @@
 import { SetMetadata } from '@nestjs/common';
 
 export enum OrderStatus {
-  Checking = 'checking',
-  InDelivery = 'in_delivery',
+  AwaitPayment = 'await payment',
+  BeingDeliveried = 'being deliveried',
   Deliveried = 'deliveried',
   Received = 'received',
 }
