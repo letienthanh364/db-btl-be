@@ -197,6 +197,7 @@ export class CartService {
         name: cartProduct.product.name,
         price: cartProduct.product.price,
         image_url: cartProduct.product.image_url,
+        inventory_quantity: cartProduct.product.inventory_quantity,
       },
     }));
   }
