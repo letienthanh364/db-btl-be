@@ -31,7 +31,7 @@ export class OrderController {
       page: page || 1,
       limit: limit || PAGINATION_LIMIT,
     };
-    return this.orderService.search(searchDto);
+    return this.orderService.search(searchDto, true);
   }
 
   @Get(':id')

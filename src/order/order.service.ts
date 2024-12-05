@@ -45,21 +45,28 @@ export class OrderService {
   }
 
   // ! Search with params
-  async search(params: OrderSearchDto): Promise<PaginatedResult<Order>> {
+  async search(
+    params: OrderSearchDto,
+    includeUser?: boolean,
+  ): Promise<PaginatedResult<Order>> {
     const query = this.orderRepo
       .createQueryBuilder('order')
-      .leftJoin('order.user', 'user')
-      .addSelect(['user.id', 'user.name'])
       .leftJoin('order.order_products', 'orderProduct')
       .leftJoin('orderProduct.product', 'product')
       .addSelect([
         'product.id',
         'product.name',
+        'product.image_url',
+        'product.price',
         'orderProduct.quantity',
         'orderProduct.unit_price',
       ]);
 
-    if (params.user_id) {
+    if (includeUser) {
+      query.leftJoin('order.user', 'user').addSelect(['user.id', 'user.name']);
+    }
+
+    if (includeUser && params.user_id) {
       query.andWhere('user.id = :userId', {
         userId: params.user_id,
       });
