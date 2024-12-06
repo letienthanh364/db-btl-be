@@ -32,7 +32,7 @@ export class PaymentController {
       page: page || 1,
       limit: limit || PAGINATION_LIMIT,
     };
-    return this.paymentService.search(searchDto);
+    return this.paymentService.search(searchDto, true);
   }
 
   @Get(':id')

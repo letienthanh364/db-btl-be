@@ -21,6 +21,8 @@ import { CartService } from 'src/cart/cart.service';
 import { OrderService } from 'src/order/order.service';
 import { PAGINATION_LIMIT } from 'src/common/paginated-result';
 import { OrderSearchDto } from 'src/order/dtos/order.search.dto';
+import { PaymentService } from 'src/payment/payment.service';
+import { PaymentSearchDto } from 'src/payment/dtos/payment.search.dto';
 
 export interface RequestUser extends Request {
   user: User;
@@ -32,6 +34,7 @@ export class UserController {
     private readonly userService: UserService,
     private readonly cartService: CartService,
     private readonly orderService: OrderService,
+    private readonly paymentService: PaymentService,
   ) {}
 
   @Post('employee')
@@ -101,6 +104,24 @@ export class UserController {
       limit: limit || PAGINATION_LIMIT,
     };
     const orders = await this.orderService.search(searchDto);
+
+    return orders;
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('payment')
+  async getPaymentHistory(
+    @Req() req: RequestUser,
+    @Query('page') page: number = 1,
+    @Query('limit') limit: number = PAGINATION_LIMIT,
+  ) {
+    const user_id = req.user.id;
+    const searchDto: PaymentSearchDto = {
+      user_id,
+      page: page || 1,
+      limit: limit || PAGINATION_LIMIT,
+    };
+    const orders = await this.paymentService.search(searchDto);
 
     return orders;
   }

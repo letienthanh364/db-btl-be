@@ -11,6 +11,8 @@ import { CartModule } from 'src/cart/cart.module';
 import { CartService } from 'src/cart/cart.service';
 import { OrderService } from 'src/order/order.service';
 import { OrderModule } from 'src/order/order.module';
+import { PaymentModule } from 'src/payment/payment.module';
+import { PaymentService } from 'src/payment/payment.service';
 
 @Module({
   imports: [
@@ -22,9 +24,16 @@ import { OrderModule } from 'src/order/order.module';
     }),
     CartModule,
     OrderModule,
+    PaymentModule,
   ],
   exports: [TypeOrmModule.forFeature([User])],
-  providers: [UserService, LocalStrategy, CartService, OrderService],
+  providers: [
+    UserService,
+    LocalStrategy,
+    CartService,
+    OrderService,
+    PaymentService,
+  ],
   controllers: [UserController],
 })
 export class UserModule {}

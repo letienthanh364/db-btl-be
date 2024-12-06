@@ -10,6 +10,7 @@ import { PaymentCreateDto } from './dtos/payment.create.dto';
 import { PaymentSearchDto } from './dtos/payment.search.dto';
 import { PaginatedResult } from 'src/common/paginated-result';
 import { Order } from 'src/order/order.entity';
+import { OrderStatus } from 'src/common/decorator/order_status';
 
 @Injectable()
 export class PaymentService {
@@ -27,7 +28,10 @@ export class PaymentService {
   }
 
   // ! Search with params
-  async search(params: PaymentSearchDto): Promise<PaginatedResult<Payment>> {
+  async search(
+    params: PaymentSearchDto,
+    includeUser?: boolean,
+  ): Promise<PaginatedResult<Payment>> {
     const query = this.paymentRepo
       .createQueryBuilder('payment')
       .leftJoinAndSelect('payment.order', 'order')
@@ -36,6 +40,10 @@ export class PaymentService {
       query.andWhere('order.id = :order_id', {
         order_id: params.order_id,
       });
+    }
+
+    if (includeUser) {
+      query.addSelect(['user']);
     }
 
     if (params.user_id) {
@@ -90,6 +98,7 @@ export class PaymentService {
       throw new NotFoundException(`Order with ID ${order_id} not found.`);
     }
 
+    // ? Create the payment
     const payment = this.paymentRepo.create({
       amount,
       currency,
@@ -98,8 +107,10 @@ export class PaymentService {
 
     const newPayment = await this.paymentRepo.save(payment);
 
-    return newPayment;
+    // ? Update the order state
+    order.status = OrderStatus.BeingDeliveried; // Adjust this to the appropriate status enum or value
+    await this.orderRepo.save(order);
 
-    // const returnedPayment = await this.paymentRepo.
+    return { ...newPayment, order: order };
   }
 }

@@ -7,10 +7,10 @@ export class PaymentSearchDto extends PartialType(
   PickType(Payment, ['amount', 'currency'] as const),
 ) {
   @Optional()
-  payment_date: string;
+  payment_date?: string;
 
   @Optional()
-  order_id: string;
+  order_id?: string;
 
   @Optional()
   user_id: string;
