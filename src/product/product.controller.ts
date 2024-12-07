@@ -27,7 +27,7 @@ export class ProductController {
     @Query('name') name?: string,
     @Query('keyword') keyword?: string,
     @Query('price') price?: number,
-    @Query('reorder_point') reorder_point?: string,
+    @Query('reorder_point') reorder_point?: number,
     @Query('description') description?: string,
     @Query('category') category?: string,
     @Query('page') page?: number,

@@ -25,8 +25,8 @@ export class Product extends BaseEntity {
   @Column({ type: 'int' })
   inventory_quantity: number;
 
-  @Column({ type: 'varchar' })
-  reorder_point: string;
+  @Column({ type: 'int' })
+  reorder_point: number;
 
   @ManyToOne(() => ProductCategory)
   @JoinColumn({ name: 'category_id', referencedColumnName: 'id' })
