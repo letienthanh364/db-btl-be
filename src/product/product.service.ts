@@ -141,4 +141,57 @@ export class ProductService {
       await queryRunner.release();
     }
   }
+
+  // ! Update
+  async update(
+    id: string,
+    productData: Partial<ProductCreateDto>,
+  ): Promise<Product> {
+    const product = await this.productRepo.findOneBy({ id });
+
+    if (!product) {
+      throw new NotFoundException(`Product with ID "${id}" not found.`);
+    }
+
+    if (productData.category_id) {
+      const category = await this.categoryRepo.findOneBy({
+        id: productData.category_id,
+      });
+      if (!category) {
+        throw new NotFoundException(
+          `Category with ID "${productData.category_id}" not found.`,
+        );
+      }
+      product.category = category;
+    }
+
+    Object.assign(product, productData);
+
+    return this.productRepo.save(product);
+  }
+
+  // ! Delete
+  async delete(id: string): Promise<void> {
+    const product = await this.productRepo.findOneBy({ id });
+
+    if (!product) {
+      throw new NotFoundException(`Product with ID "${id}" not found.`);
+    }
+
+    try {
+      await this.productRepo.remove(product);
+    } catch (error) {
+      if (
+        error.code === '23503' && // PostgreSQL foreign key violation error code
+        error.detail?.includes('OrderProduct')
+      ) {
+        throw new BadRequestException(
+          `Cannot delete product with ID "${id}" because it is referenced in one or more orders.`,
+        );
+      }
+      throw new BadRequestException(
+        `Failed to delete product with ID "${id}". ${error.message}`,
+      );
+    }
+  }
 }

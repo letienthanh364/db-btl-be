@@ -1,4 +1,13 @@
-import { Body, Controller, Get, Param, Post, Query } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Post,
+  Put,
+  Query,
+} from '@nestjs/common';
 import { ProductService } from './product.service';
 import { ProductCreateDto } from './dtos/product.create.dto';
 import { ProductSearchDto } from './dtos/product.search.dto';
@@ -40,5 +49,21 @@ export class ProductController {
   @Get(':id')
   async getById(@Param('id') id: string) {
     return this.productService.findOne(id);
+  }
+
+  @Put(':id')
+  async update(
+    @Param('id') id: string,
+    @Body() productData: Partial<ProductCreateDto>,
+  ) {
+    return this.productService.update(id, productData);
+  }
+
+  @Delete(':id')
+  async delete(@Param('id') id: string) {
+    await this.productService.delete(id);
+    return {
+      message: `Product with ID "${id}" has been deleted successfully.`,
+    };
   }
 }
