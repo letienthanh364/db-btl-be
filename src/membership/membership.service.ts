@@ -36,12 +36,6 @@ export class MembershipService {
       });
     }
 
-    if (params.deduct_available) {
-      query.andWhere('membership.deduct_available = :deduct_available', {
-        deduct_available: params.deduct_available,
-      });
-    }
-
     // Pagination logic
     const page = params.page;
     const limit = params.limit;
@@ -88,9 +82,6 @@ export class MembershipService {
             `membership name "${lowercasedName}" already exists`,
           );
         }
-
-        membership.deduct_available =
-          membership.deduct_limit - membership.deduct_rate;
 
         membership.name = lowercasedName;
       });

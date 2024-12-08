@@ -1,9 +1,25 @@
-import { Body, Controller, Get, Param, Post, Query } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  ForbiddenException,
+  Get,
+  Param,
+  ParseUUIDPipe,
+  Post,
+  Put,
+  Query,
+  Req,
+  UseGuards,
+} from '@nestjs/common';
 import { OrderService } from './order.service';
 import { OrderCreateDto } from './dtos/order.create.dto';
 import { OrderSearchDto } from './dtos/order.search.dto';
 import { PAGINATION_LIMIT } from 'src/common/paginated-result';
 import { OrderStatus } from 'src/common/decorator/order_status';
+import { Roles, UserRole } from 'src/common/decorator/user_role';
+import { JwtAuthGuard } from 'src/common/auth/strategy';
+import { RolesGuard } from 'src/common/auth/role_guard';
+import { RequestUser } from 'src/user/user.controller';
 
 @Controller('order')
 export class OrderController {
@@ -37,5 +53,24 @@ export class OrderController {
   @Get(':id')
   async getById(@Param('id') id: string) {
     return this.orderService.findOne(id);
+  }
+
+  // Endpoint to update order status
+  @Put(':id')
+  @Roles(UserRole.Employee, UserRole.Manager, UserRole.Admin)
+  @UseGuards(JwtAuthGuard, RolesGuard) // Ensuring that the request is authenticated and authorized
+  async updateStatus(
+    @Param('id', ParseUUIDPipe) id: string, // Ensure the id is a valid UUID
+    @Body('status') status: OrderStatus, // The new status to update
+    @Req() req: RequestUser, // Get the current user from the request
+  ) {
+    if (req.user?.authority_group === UserRole.Customer) {
+      throw new ForbiddenException(
+        'Only users with proper authority can update order status',
+      );
+    }
+
+    // Proceed with updating the status
+    return this.orderService.updateStatus(id, status);
   }
 }

@@ -3,11 +3,7 @@ import { Membership } from '../membership.entity';
 import { PAGINATION_LIMIT } from 'src/common/paginated-result';
 
 export class MembershipSearchDto extends PartialType(
-  PickType(Membership, [
-    'deduct_rate',
-    'deduct_limit',
-    'deduct_available',
-  ] as const),
+  PickType(Membership, ['deduct_rate', 'deduct_limit'] as const),
 ) {
   @ApiPropertyOptional({
     description: 'Page number for pagination',

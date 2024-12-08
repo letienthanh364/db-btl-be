@@ -79,7 +79,6 @@ export class CartService {
       newQuantity: number;
     },
   ): Promise<Cart> {
-    console.log(cartCreateOrUpdateDto);
     const { user_id, product_id, newQuantity } = cartCreateOrUpdateDto;
 
     if (newQuantity <= 0) {
@@ -98,6 +97,13 @@ export class CartService {
     });
     if (!product) {
       throw new NotFoundException(`Product with id ${product_id} not found`);
+    }
+
+    // Check if the new quantity exceeds the available inventory
+    if (newQuantity > product.inventory_quantity) {
+      throw new BadRequestException(
+        `Cannot add ${newQuantity} items to the cart. Only ${product.inventory_quantity} items are available in stock.`,
+      );
     }
 
     if (!cart) {
@@ -120,6 +126,13 @@ export class CartService {
       );
 
       if (cartProduct) {
+        // Check if the new quantity exceeds the available inventory
+        if (newQuantity > product.inventory_quantity) {
+          throw new BadRequestException(
+            `Cannot update quantity to ${newQuantity}. Only ${product.inventory_quantity} items are available in stock.`,
+          );
+        }
+
         // Update the quantity if the product exists
         cartProduct.quantity = newQuantity;
         await this.cartProductRepo.save(cartProduct);
@@ -135,7 +148,7 @@ export class CartService {
       }
     }
 
-    // Return the updated cart
+    // Return the updated cart with product details
     return this.cartRepo
       .createQueryBuilder('cart')
       .leftJoinAndSelect('cart.cart_products', 'cartProduct')
@@ -191,15 +204,85 @@ export class CartService {
       throw new NotFoundException(`No cart found for user with id ${userId}`);
     }
 
-    return cart.cart_products.map((cartProduct) => ({
-      ...cartProduct,
-      product: {
-        id: cartProduct.product.id,
-        name: cartProduct.product.name,
-        price: cartProduct.product.price,
-        image_url: cartProduct.product.image_url,
-        inventory_quantity: cartProduct.product.inventory_quantity,
-      },
-    }));
+    // Include the cart id along with the cart products
+    return {
+      cart_id: cart.id, // Include the cart id
+      cart_products: cart.cart_products.map((cartProduct) => ({
+        ...cartProduct,
+        product: {
+          id: cartProduct.product.id,
+          name: cartProduct.product.name,
+          price: cartProduct.product.price,
+          image_url: cartProduct.product.image_url,
+          inventory_quantity: cartProduct.product.inventory_quantity,
+        },
+      })),
+    };
+  }
+
+  async checkCanPurchaseCartAndCalculateTotal(cartId: string): Promise<number> {
+    if (!cartId) {
+      throw new BadRequestException('Cart ID cannot be NULL or undefined');
+    }
+
+    try {
+      // Call the PostgreSQL function to check stock and calculate the total
+      const result = await this.dataSource.query(
+        'SELECT public.checkcanpurchasecartandcalculatetotal($1)',
+        [cartId],
+      );
+
+      if (
+        !result ||
+        !result[0] ||
+        result[0].checkcanpurchasecartandcalculatetotal === null
+      ) {
+        throw new BadRequestException(
+          'Unable to calculate total or check stock for this cart',
+        );
+      }
+
+      // Return the total price calculated by the SQL function
+      return parseFloat(result[0].checkcanpurchasecartandcalculatetotal);
+    } catch (error) {
+      throw new NotFoundException(
+        'Error calculating total or checking stock: ' + error.message,
+      );
+    }
+  }
+
+  async calculatePayableAmountWithOwnerShipMemberShip(
+    cartId: string,
+  ): Promise<number> {
+    if (!cartId) {
+      throw new BadRequestException('Cart ID cannot be NULL or undefined');
+    }
+
+    try {
+      // Call the PostgreSQL function to check stock and calculate the total
+      const result = await this.dataSource.query(
+        'SELECT public.calculate_payable_amount_with_ownership_membership($1)',
+        [cartId],
+      );
+
+      if (
+        !result ||
+        !result[0] ||
+        result[0].calculate_payable_amount_with_ownership_membership === null
+      ) {
+        throw new BadRequestException(
+          'Unable to calculate payable amount with membership for this cart',
+        );
+      }
+
+      // Return the total price calculated by the SQL function
+      return parseFloat(
+        result[0].calculate_payable_amount_with_ownership_membership,
+      );
+    } catch (error) {
+      throw new NotFoundException(
+        'Error calculating payable amount with membership: ' + error.message,
+      );
+    }
   }
 }

@@ -78,6 +78,9 @@ export class ProductService {
     const limit = params.limit || 10;
     const offset = (page - 1) * limit;
 
+    // Add sorting by latest (assuming there's a 'created_at' column)
+    query.orderBy('product.created_at', 'DESC');
+
     query.skip(offset).take(limit);
 
     const [result, total] = await query.getManyAndCount();

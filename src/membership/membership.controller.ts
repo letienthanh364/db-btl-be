@@ -17,14 +17,12 @@ export class MembershipController {
   async search(
     @Query('deduct_rate') deduct_rate?: number,
     @Query('deduct_limit') deduct_limit?: number,
-    @Query('deduct_available') deduct_available?: number,
     @Query('page') page?: number,
     @Query('limit') limit?: number,
   ) {
     const searchDto: MembershipSearchDto = {
       deduct_rate,
       deduct_limit,
-      deduct_available,
       page: page || 1,
       limit: limit || PAGINATION_LIMIT,
     };

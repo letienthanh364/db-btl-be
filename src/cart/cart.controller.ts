@@ -1,4 +1,13 @@
-import { Body, Controller, Get, Param, Post, Query } from '@nestjs/common';
+import {
+  BadRequestException,
+  Body,
+  Controller,
+  Get,
+  NotFoundException,
+  Param,
+  Post,
+  Query,
+} from '@nestjs/common';
 import { CartService } from './cart.service';
 import { CartCreateDto } from './dtos/cart.create.dto';
 import { CartSearchDto } from './dtos/cart.search.dto';
@@ -25,6 +34,32 @@ export class CartController {
       limit: limit || PAGINATION_LIMIT,
     };
     return this.cartService.search(searchDto);
+  }
+
+  @Get(':cartId/check-and-calculate-total')
+  async checkCanPurchaseCartAndCalculateTotal(@Param('cartId') cartId: string) {
+    try {
+      const total =
+        await this.cartService.checkCanPurchaseCartAndCalculateTotal(cartId);
+      return { total }; // Return the total price calculated by the SQL function
+    } catch (error) {
+      throw new BadRequestException(error.message); // Handle any errors
+    }
+  }
+
+  @Get(':cartId/calculate-payable-amount')
+  async calculatePayableAmountWithOwnerShipMemberShip(
+    @Param('cartId') cartId: string,
+  ) {
+    try {
+      const total =
+        await this.cartService.calculatePayableAmountWithOwnerShipMemberShip(
+          cartId,
+        );
+      return { total }; // Return the total price calculated by the SQL function
+    } catch (error) {
+      throw new BadRequestException(error.message); // Handle any errors
+    }
   }
 
   @Get(':id')

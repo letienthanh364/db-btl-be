@@ -13,9 +13,6 @@ export class Membership extends BaseEntity {
   @Column({ type: 'float' })
   deduct_limit: number;
 
-  @Column({ type: 'varchar' })
-  deduct_available: number;
-
   @UpdateDateColumn()
   renew_date: Date;
 }

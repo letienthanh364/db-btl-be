@@ -3,6 +3,8 @@ export class OrderCreateDto {
 
   address: string;
 
+  use_discount?: boolean;
+
   order_products: {
     product_id: string;
     quantity: number;
