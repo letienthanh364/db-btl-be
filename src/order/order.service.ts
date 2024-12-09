@@ -13,6 +13,7 @@ import { Product } from 'src/product/product.entity';
 import { Cart, CartProduct } from 'src/cart/cart.entity';
 import { User } from 'src/user/user.entity';
 import { OrderStatus } from 'src/common/decorator/order_status';
+import { OrderProductUpdateDto } from './dtos/order.update.dto';
 
 export const ORDER_TAX = 0.05;
 
@@ -36,15 +37,16 @@ export class OrderService {
 
     @InjectRepository(Product)
     private readonly productRepo: Repository<Product>,
+
     private readonly dataSource: DataSource,
   ) {}
 
   // ! Find by id
-  async findOne(id: string): Promise<Order> {
-    return this.orderRepo
+  async findOne(id: string): Promise<any> {
+    const order = await this.orderRepo
       .createQueryBuilder('order')
-      .leftJoin('order.order_products', 'orderProduct')
-      .leftJoin('orderProduct.product', 'product')
+      .leftJoinAndSelect('order.order_products', 'orderProduct') // Left join to get the order products
+      .leftJoinAndSelect('orderProduct.product', 'product') // Left join to get the product details
       .addSelect([
         'product.id',
         'product.name',
@@ -55,6 +57,37 @@ export class OrderService {
       ])
       .where('order.id = :id', { id })
       .getOne();
+
+    if (!order) {
+      throw new Error('Order not found');
+    }
+
+    // Format the result as per the required structure
+    return {
+      id: order.id,
+      created_at: order.created_at,
+      updated_at: order.updated_at,
+      order_date: order.order_date,
+      address: order.address,
+      original_amount: order.original_amount,
+      deduct_rate: order.deduct_rate,
+      deduct_amount: order.deduct_amount,
+      remain_amount: order.remain_amount,
+      tax: order.tax,
+      status: order.status,
+      user: {
+        name: order.user?.name,
+        email: order.user?.email,
+      },
+      order_products: order.order_products.map((orderProduct) => ({
+        product_id: orderProduct.product.id,
+        name: orderProduct.product.name,
+        image_url: orderProduct.product.image_url,
+        price: orderProduct.product.price,
+        quantity: orderProduct.quantity,
+        unit_price: orderProduct.unit_price,
+      })),
+    };
   }
 
   // ! Search with params
@@ -75,25 +108,17 @@ export class OrderService {
         'orderProduct.unit_price',
       ]);
 
-    // Always allow filtering by user_id, even if includeUser is false
     if (params.user_id) {
       query.andWhere('order.user_id = :userId', {
         userId: params.user_id,
       });
     }
 
-    // If includeUser is true, join and select user details
     if (includeUser) {
       query
         .leftJoinAndSelect('order.user', 'user')
-        .addSelect(['user.id', 'user.name']);
+        .addSelect(['user.id', 'user.name', 'user.email']);
     }
-
-    // if (params.order_date) {
-    //   query.andWhere('order.order_date = :orderDate', {
-    //     orderDate: params.order_date,
-    //   });
-    // }
 
     if (params.status) {
       query.andWhere('order.order_status = :status', {
@@ -101,13 +126,6 @@ export class OrderService {
       });
     }
 
-    // if (params.product_id) {
-    //   query.andWhere('product.id = :productId', {
-    //     productId: params.product_id,
-    //   });
-    // }
-
-    // Add ordering by order_date descending (latest orders first)
     query.orderBy('order.order_date', 'DESC');
 
     // Pagination logic
@@ -125,9 +143,38 @@ export class OrderService {
     const hasNext = page < numberOfPages;
     const hasPrevious = page > 1;
 
-    // Return the paginated results, ensuring the order_products are correctly associated
-    return new PaginatedResult<Order>(
-      result, // The result is already mapped correctly
+    // Map the results to match the desired format
+    const formattedResult = result.map((order) => {
+      return {
+        id: order.id,
+        created_at: order.created_at,
+        updated_at: order.updated_at,
+        order_date: order.order_date,
+        address: order.address,
+        original_amount: order.original_amount,
+        deduct_rate: order.deduct_rate,
+        deduct_amount: order.deduct_amount,
+        remain_amount: order.remain_amount,
+        tax: order.tax,
+        status: order.status,
+        user: {
+          name: order.user?.name,
+          email: order.user?.email,
+        },
+        order_products: order.order_products.map((orderProduct) => ({
+          product_id: orderProduct.product.id,
+          name: orderProduct.product.name,
+          image_url: orderProduct.product.image_url,
+          price: orderProduct.product.price,
+          quantity: orderProduct.quantity,
+          unit_price: orderProduct.unit_price,
+        })),
+      };
+    });
+
+    // Return the paginated results with the formatted data
+    return new PaginatedResult<any>(
+      formattedResult, // The result is now in the desired format
       total,
       numberOfPages,
       hasNext,
@@ -437,7 +484,7 @@ export class OrderService {
             email: order.user.email,
           },
           order_products: order.order_products.map((orderProduct) => ({
-            id: orderProduct.product.id,
+            product_id: orderProduct.product.id,
             name: orderProduct.product.name,
             image_url: orderProduct.product.image_url,
             price: orderProduct.product.price,
@@ -462,6 +509,96 @@ export class OrderService {
       throw new Error(`Error fetching orders: ${error.message}`);
     } finally {
       // Release the query runner after operation
+      await queryRunner.release();
+    }
+  }
+
+  // ! Update order
+  async updateOrder(
+    orderId: string,
+    orderProductUpdates: OrderProductUpdateDto[],
+  ): Promise<Order> {
+    // Retrieve the order to update
+    const order = await this.orderRepo.findOne({
+      where: { id: orderId },
+      relations: ['order_products', 'order_products.product'], // Get associated order products
+    });
+
+    if (!order) {
+      throw new NotFoundException(`Order with ID ${orderId} not found`);
+    }
+
+    // Check if the order has at least one product
+    let totalOrderProducts = order.order_products.length;
+
+    const queryRunner = this.orderRepo.manager.connection.createQueryRunner();
+    await queryRunner.startTransaction();
+
+    try {
+      //? Handle the updates for order products
+      for (const update of orderProductUpdates) {
+        const { productId, newQuantity, isDeleted } = update;
+
+        // Find the specific order product
+        const orderProduct = order.order_products.find(
+          (op) => op.product.id === productId,
+        );
+
+        if (!orderProduct) {
+          throw new NotFoundException(
+            `OrderProduct with productId ${productId} not found`,
+          );
+        }
+
+        //? If deleting the product
+        if (isDeleted) {
+          await queryRunner.manager.remove(orderProduct);
+
+          totalOrderProducts -= 1;
+          if (totalOrderProducts === 0) {
+            throw new BadRequestException('Cannot delete all order products');
+          }
+
+          // Update the inventory quantity (increase the stock of deleted product)
+          orderProduct.product.inventory_quantity += orderProduct.quantity;
+          await queryRunner.manager.save(Product, orderProduct.product); // Restore the inventory stock
+
+          continue; // Skip to the next product update
+        }
+
+        //? If updating the quantity of an order product
+        if (newQuantity !== orderProduct.quantity) {
+          const product = orderProduct.product;
+
+          // Update inventory by decreasing the stock for updated quantity
+          product.inventory_quantity -= newQuantity - orderProduct.quantity;
+          if (product.inventory_quantity < 0) {
+            throw new BadRequestException('Not enough stock for product');
+          }
+
+          // Update the order product's quantity
+          orderProduct.quantity = newQuantity;
+
+          // Save the updated product inventory and order product
+          await queryRunner.manager.save(Product, product); // Update product's inventory in DB
+          await queryRunner.manager.save(orderProduct); // Save updated order product
+        }
+      }
+
+      // Commit the transaction
+      await queryRunner.commitTransaction();
+
+      // Return the updated order
+      return this.orderRepo.findOne({
+        where: { id: orderId },
+        relations: ['order_products'], // Return updated order with products
+      });
+    } catch (error) {
+      // If there's any error, rollback the transaction
+      await queryRunner.rollbackTransaction();
+      throw new Error(`Error updating order: ${error.message}`);
+    } finally {
+      // Release the query runner
       await queryRunner.release();
     }
   }

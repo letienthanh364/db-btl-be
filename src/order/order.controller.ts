@@ -5,6 +5,7 @@ import {
   Get,
   Param,
   ParseUUIDPipe,
+  Patch,
   Post,
   Put,
   Query,
@@ -20,6 +21,7 @@ import { Roles, UserRole } from 'src/common/decorator/user_role';
 import { JwtAuthGuard } from 'src/common/auth/strategy';
 import { RolesGuard } from 'src/common/auth/role_guard';
 import { RequestUser } from 'src/user/user.controller';
+import { OrderProductUpdateDto } from './dtos/order.update.dto';
 
 @Controller('order')
 export class OrderController {
@@ -90,5 +92,13 @@ export class OrderController {
 
     // Proceed with updating the status
     return this.orderService.updateStatus(id, status);
+  }
+
+  @Patch(':id')
+  async updateOrder(
+    @Param('id') orderId: string,
+    @Body() orderProductUpdates: OrderProductUpdateDto[],
+  ) {
+    return this.orderService.updateOrder(orderId, orderProductUpdates);
   }
 }
