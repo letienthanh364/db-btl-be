@@ -5,11 +5,13 @@ import { PAGINATION_LIMIT } from 'src/common/paginated-result';
 export class OrderSearchDto {
   user_id?: string;
 
-  product_id?: string;
+  // product_id?: string;
 
   status?: OrderStatus;
 
-  order_date?: Date;
+  // order_date?: Date;
+  start_date?: string;
+  end_date?: string;
 
   @ApiPropertyOptional({
     description: 'Page number for pagination',

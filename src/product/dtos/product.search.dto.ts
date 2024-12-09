@@ -12,6 +12,12 @@ export class ProductSearchDto extends PartialType(
   @Optional()
   keyword?: string;
 
+  @Optional()
+  sort?: string;
+
+  @Optional()
+  minQuantity?: number;
+
   @ApiPropertyOptional({
     description: 'Page number for pagination',
     example: 1,

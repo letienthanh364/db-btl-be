@@ -3,7 +3,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { DataSource, Repository } from 'typeorm';
+import { DataSource, In, Repository } from 'typeorm';
 import { Order, OrderProduct } from './order.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { OrderCreateDto } from './dtos/order.create.dto';
@@ -89,11 +89,11 @@ export class OrderService {
         .addSelect(['user.id', 'user.name']);
     }
 
-    if (params.order_date) {
-      query.andWhere('order.order_date = :orderDate', {
-        orderDate: params.order_date,
-      });
-    }
+    // if (params.order_date) {
+    //   query.andWhere('order.order_date = :orderDate', {
+    //     orderDate: params.order_date,
+    //   });
+    // }
 
     if (params.status) {
       query.andWhere('order.order_status = :status', {
@@ -101,11 +101,11 @@ export class OrderService {
       });
     }
 
-    if (params.product_id) {
-      query.andWhere('product.id = :productId', {
-        productId: params.product_id,
-      });
-    }
+    // if (params.product_id) {
+    //   query.andWhere('product.id = :productId', {
+    //     productId: params.product_id,
+    //   });
+    // }
 
     // Add ordering by order_date descending (latest orders first)
     query.orderBy('order.order_date', 'DESC');
@@ -357,5 +357,112 @@ export class OrderService {
       .getOne();
 
     return returnedOrder;
+  }
+
+  // ! Filter order by status and date
+  async getOrdersByStatusAndDateForUser(
+    params: OrderSearchDto,
+  ): Promise<PaginatedResult<any>> {
+    const {
+      status,
+      start_date,
+      end_date,
+      page = 1,
+      limit = 10,
+      user_id,
+    } = params;
+
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
+    try {
+      // Prepare start and end date if the user provided a specific order date range
+      const startDate = start_date
+        ? new Date(start_date)
+        : new Date('2000-01-01'); // Default to an old date if no range is provided
+      const endDate = end_date ? new Date(end_date) : new Date(); // Default to today's date
+      startDate.setHours(0, 0, 0, 0);
+      endDate.setHours(23, 59, 59, 999);
+      const passedStatus = status ? status : OrderStatus.AwaitPayment;
+
+      // Call the stored procedure using queryRunner to populate the temp table
+      await queryRunner.manager.query(
+        `CALL public.get_orders_by_status_and_date($1, $2, $3, $4)`,
+        [user_id, passedStatus, startDate, endDate],
+      );
+
+      // Now, get the order IDs from the temp_orders table
+      const orderIdsResult = await queryRunner.manager.query(
+        `SELECT order_id FROM temp_orders ORDER BY order_date DESC LIMIT $1 OFFSET $2`,
+        [limit, (page - 1) * limit],
+      );
+
+      const orderIds = orderIdsResult.map((row) => row.order_id);
+
+      // Now, use TypeORM to fetch the full order details for each order_id
+      const orders = await this.orderRepo.find({
+        where: { id: In(orderIds) },
+        relations: ['order_products', 'user', 'order_products.product'], // Fetch related order products and products
+        order: { order_date: 'DESC' },
+      });
+
+      // Extract total count (we assume `temp_orders` has the same records we need to paginate)
+      const totalCountResult = await queryRunner.manager.query(
+        `SELECT COUNT(*) FROM temp_orders`,
+      );
+      const totalCount = parseInt(totalCountResult[0].count, 10);
+
+      // Calculate number of pages
+      const numberOfPages = Math.ceil(totalCount / limit);
+      const hasNext = page < numberOfPages;
+      const hasPrevious = page > 1;
+
+      // Format the result into a paginated structure
+      const formattedResult = orders.map((order) => {
+        return {
+          id: order.id,
+          created_at: order.created_at,
+          updated_at: order.updated_at,
+          order_date: order.order_date,
+          address: order.address,
+          original_amount: order.original_amount,
+          deduct_rate: order.deduct_rate,
+          deduct_amount: order.deduct_amount,
+          remain_amount: order.remain_amount,
+          tax: order.tax,
+          status: order.status,
+          user: {
+            name: order.user.name,
+            email: order.user.email,
+          },
+          order_products: order.order_products.map((orderProduct) => ({
+            id: orderProduct.product.id,
+            name: orderProduct.product.name,
+            image_url: orderProduct.product.image_url,
+            price: orderProduct.product.price,
+            quantity: orderProduct.quantity,
+            unit_price: orderProduct.unit_price,
+          })),
+        };
+      });
+
+      // Return PaginatedResult
+      return new PaginatedResult(
+        formattedResult,
+        totalCount,
+        numberOfPages,
+        hasNext,
+        hasPrevious,
+        limit,
+        page,
+      );
+    } catch (error) {
+      // Handle errors
+      throw new Error(`Error fetching orders: ${error.message}`);
+    } finally {
+      // Release the query runner after operation
+      await queryRunner.release();
+    }
   }
 }

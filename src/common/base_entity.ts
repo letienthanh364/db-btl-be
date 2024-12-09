@@ -1,11 +1,15 @@
 import { ApiProperty } from '@nestjs/swagger';
 import {
+  BeforeInsert,
+  BeforeUpdate,
   CreateDateColumn,
   DeleteDateColumn,
   Entity,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
+
+import * as moment from 'moment-timezone';
 
 @Entity()
 export class BaseEntity {
@@ -36,4 +40,23 @@ export class BaseEntity {
   })
   @UpdateDateColumn()
   updated_at: Date;
+
+  @BeforeInsert()
+  @BeforeUpdate()
+  setTimeZone() {
+    // Ensure that we are always assigning a Date object.
+    const hoChiMinhTime = moment.tz('Asia/Ho_Chi_Minh').toDate(); // Use toDate() to get a Date object
+
+    // Assign the created_at and updated_at properties with Date objects
+    this.created_at = this.created_at
+      ? moment(this.created_at).tz('Asia/Ho_Chi_Minh').toDate()
+      : hoChiMinhTime;
+    this.updated_at = this.updated_at
+      ? moment(this.updated_at).tz('Asia/Ho_Chi_Minh').toDate()
+      : hoChiMinhTime;
+
+    if (this.deleted_at) {
+      this.deleted_at = moment(this.deleted_at).tz('Asia/Ho_Chi_Minh').toDate(); // Ensure it's a Date object
+    }
+  }
 }

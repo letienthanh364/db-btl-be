@@ -87,7 +87,9 @@ export class PaymentService {
   }
 
   // ! Create
-  async create(paymentCreateDto: PaymentCreateDto): Promise<Payment> {
+  async create(
+    paymentCreateDto: PaymentCreateDto,
+  ): Promise<Omit<Payment, 'setTimeZone'>> {
     const { order_id, amount, currency } = paymentCreateDto;
 
     // ? Validate order

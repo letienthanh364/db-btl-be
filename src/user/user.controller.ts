@@ -23,6 +23,7 @@ import { PAGINATION_LIMIT } from 'src/common/paginated-result';
 import { OrderSearchDto } from 'src/order/dtos/order.search.dto';
 import { PaymentService } from 'src/payment/payment.service';
 import { PaymentSearchDto } from 'src/payment/dtos/payment.search.dto';
+import { OrderStatus } from 'src/common/decorator/order_status';
 
 export interface RequestUser extends Request {
   user: User;
@@ -96,15 +97,26 @@ export class UserController {
     @Req() req: RequestUser,
     @Query('page') page: number = 1,
     @Query('limit') limit: number = PAGINATION_LIMIT,
+    @Query('status') status?: string, // Optional status query parameter
+    @Query('start_date') start_date?: string, // Optional start date
+    @Query('end_date') end_date?: string, // Optional end date
   ) {
     const user_id = req.user.id;
+    // Create the search DTO with the necessary filters
     const searchDto: OrderSearchDto = {
       user_id,
-      page: page || 1,
-      limit: limit || PAGINATION_LIMIT,
+      status: status as OrderStatus, // Ensure it's a valid enum if necessary
+      start_date: start_date,
+      end_date: end_date,
+      page: page ? page : 1,
+      limit: limit ? limit : 12,
     };
-    const orders = await this.orderService.search(searchDto);
 
+    // Call the service method to get the orders
+    const orders =
+      await this.orderService.getOrdersByStatusAndDateForUser(searchDto);
+
+    // Return the paginated order list
     return orders;
   }
 

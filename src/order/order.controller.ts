@@ -41,14 +41,32 @@ export class OrderController {
   ) {
     const searchDto: OrderSearchDto = {
       user_id,
-      product_id,
       status,
-      order_date,
       page: page || 1,
       limit: limit || PAGINATION_LIMIT,
     };
     return this.orderService.search(searchDto, true);
   }
+
+  // @Get('')
+  // async searchByStatusAndDate(
+  //   @Query('user_id') user_id?: string,
+  //   @Query('status') status?: OrderStatus,
+  //   @Query('start_date') start_date?: Date,
+  //   @Query('end_date') end_date?: Date,
+  //   @Query('page') page: number = 1,
+  //   @Query('limit') limit: number = PAGINATION_LIMIT,
+  // ) {
+  //   const searchDto: OrderSearchDto = {
+  //     user_id,
+  //     status,
+  //     start_date,
+  //     end_date,
+  //     page: page || 1,
+  //     limit: limit || PAGINATION_LIMIT,
+  //   };
+  //   return this.orderService.search(searchDto, true);
+  // }
 
   @Get(':id')
   async getById(@Param('id') id: string) {

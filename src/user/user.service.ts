@@ -36,7 +36,9 @@ export class UserService {
     });
   }
 
-  async register(user: UserRegisterDto): Promise<Customer> {
+  async register(
+    user: UserRegisterDto,
+  ): Promise<Omit<Customer, 'setTimeZone'>> {
     const existingUser = await this.userRepo.findOne({
       where: {
         email: user.email,
@@ -55,7 +57,9 @@ export class UserService {
   }
 
   // ! Create multiple accounts
-  async createEmployees(users: UserCreateDto[]): Promise<Employee[]> {
+  async createEmployees(
+    users: UserCreateDto[],
+  ): Promise<Omit<Employee, 'setTimeZone'>[]> {
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();

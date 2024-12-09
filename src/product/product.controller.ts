@@ -30,6 +30,8 @@ export class ProductController {
     @Query('reorder_point') reorder_point?: number,
     @Query('description') description?: string,
     @Query('category') category?: string,
+    @Query('sort') sort?: string,
+    @Query('minQuantity') minQuantity?: number,
     @Query('page') page?: number,
     @Query('limit') limit?: number,
   ) {
@@ -39,6 +41,8 @@ export class ProductController {
       price,
       reorder_point,
       description,
+      sort,
+      minQuantity,
       category: category && category.toLowerCase(),
       page: page || 1,
       limit: limit || PAGINATION_LIMIT,
