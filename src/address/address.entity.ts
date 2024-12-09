@@ -1,11 +1,16 @@
 import { Optional } from '@nestjs/common';
 import { BaseEntity } from 'src/common/base_entity';
-import { Column, Entity } from 'typeorm';
+import { User } from 'src/user/user.entity';
+import { Column, Entity, JoinColumn, ManyToOne } from 'typeorm';
 
 @Entity('Address')
 export class Address extends BaseEntity {
-  @Column({ type: 'varchar' })
-  default_flag: string;
+  @ManyToOne(() => User)
+  @JoinColumn({ name: 'user_id' })
+  user: User;
+
+  @Column({ type: 'boolean', default: false })
+  default_flag: boolean;
 
   @Column({ type: 'varchar' })
   city: string;
@@ -15,5 +20,5 @@ export class Address extends BaseEntity {
 
   @Optional()
   @Column({ type: 'varchar', default: '' })
-  order_details: string;
+  other_details: string;
 }

@@ -15,7 +15,7 @@ export class AddressController {
 
   @Get('')
   async search(
-    @Query('default_flag') default_flag?: string,
+    @Query('default_flag') default_flag?: boolean,
     @Query('city') city?: string,
     @Query('district') district?: string,
     @Query('page') page: number = 1,

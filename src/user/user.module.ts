@@ -13,6 +13,8 @@ import { OrderService } from 'src/order/order.service';
 import { OrderModule } from 'src/order/order.module';
 import { PaymentModule } from 'src/payment/payment.module';
 import { PaymentService } from 'src/payment/payment.service';
+import { Address } from 'src/address/address.entity';
+import { AddressModule } from 'src/address/address.module';
 
 @Module({
   imports: [
@@ -25,6 +27,7 @@ import { PaymentService } from 'src/payment/payment.service';
     CartModule,
     OrderModule,
     PaymentModule,
+    AddressModule,
   ],
   exports: [TypeOrmModule.forFeature([User])],
   providers: [

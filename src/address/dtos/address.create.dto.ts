@@ -5,5 +5,5 @@ export class AddressCreateDto extends PickType(Address, [
   'default_flag',
   'city',
   'district',
-  'order_details',
+  'other_details',
 ] as const) {}

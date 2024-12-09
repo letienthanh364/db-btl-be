@@ -1,15 +1,10 @@
-import {
-  Column,
-  CreateDateColumn,
-  Entity,
-  JoinColumn,
-  ManyToOne,
-} from 'typeorm';
+import { Column, Entity, JoinColumn, ManyToOne, OneToMany } from 'typeorm';
 import { BaseEntity } from '../common/base_entity';
 import { ApiProperty, OmitType, PickType } from '@nestjs/swagger';
 import { UserRole } from 'src/common/decorator/user_role';
 import { IsOptional } from 'class-validator';
 import { Membership } from 'src/membership/membership.entity';
+import { Address } from 'src/address/address.entity';
 
 @Entity('User')
 export class User extends BaseEntity {
@@ -48,6 +43,9 @@ export class User extends BaseEntity {
   @ManyToOne(() => Membership, { nullable: true })
   @JoinColumn({ name: 'membership_id', referencedColumnName: 'id' })
   membership: Membership;
+
+  @OneToMany(() => Address, (address) => address.user, { nullable: true })
+  address: Address;
 }
 
 export class Employee extends OmitType(User, ['point']) {}
