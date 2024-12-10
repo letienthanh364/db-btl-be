@@ -25,7 +25,11 @@ export class ProductService {
 
   // ! Find by id
   async findOne(id: string): Promise<Product> {
-    return this.productRepo.findOneBy({ id });
+    return this.productRepo
+      .createQueryBuilder('product')
+      .leftJoinAndSelect('product.category', 'category') // Include the category relation
+      .where('product.id = :id', { id })
+      .getOne();
   }
 
   // ! Search with params
@@ -35,107 +39,54 @@ export class ProductService {
     await queryRunner.startTransaction();
 
     try {
-      // If 'sort' is 'top seller', call the procedure to get top-selling products
-      let result = [];
+      let productIds = [];
       let total = 0;
 
       if (params.sort === 'top seller') {
-        // Ensure that min_quantity is set, for example, 10 (you can adjust this or pass as a param)
+        // Execute procedure to populate temp table
         const minQuantity = params.minQuantity || 50;
-
-        // Call the procedure to get the top-selling products based on sales quantity
         await queryRunner.manager.query(
           `CALL public.get_products_satisfying_sales_count($1)`,
           [minQuantity],
         );
 
-        // Get the top-selling products from the temp table
-        result = await queryRunner.manager.query(
+        // Retrieve product IDs from the temp table
+        const tempResult = await queryRunner.manager.query(
           `
-            SELECT p.* FROM public."Product" p
-            INNER JOIN temp_product_sales ps ON ps.product_id = p.id
-            ORDER BY ps.total_quantity_sold DESC
+          SELECT ps.product_id
+          FROM temp_product_sales ps
+          ORDER BY ps.total_quantity_sold DESC
           `,
         );
 
-        total = result.length; // The total count will be the number of products returned from the temp table
+        productIds = tempResult.map((row) => row.product_id);
+        total = productIds.length;
       } else {
-        // Normal product search logic when sort is not 'top seller'
-        const query = this.productRepo
+        // If no params.sort, fetch all product IDs
+        const allProductsResult = await this.productRepo
           .createQueryBuilder('product')
-          .leftJoin('product.category', 'category')
-          .addSelect(['category.id', 'category.description', 'category.name']);
+          .select('product.id')
+          .getMany();
 
-        if (params.name) {
-          query.andWhere('product.name = :name', {
-            name: params.name,
-          });
-        }
-
-        if (params.price) {
-          query.andWhere('product.price = :price', {
-            price: params.price,
-          });
-        }
-
-        if (params.reorder_point) {
-          query.andWhere('product.reorder_point = :reorder_point', {
-            reorder_point: params.reorder_point,
-          });
-        }
-
-        if (params.description) {
-          query.andWhere('product.description = :description', {
-            description: params.description,
-          });
-        }
-
-        if (params.category) {
-          query.andWhere('category.name = :categoryName', {
-            categoryName: params.category,
-          });
-        }
-
-        if (params.keyword) {
-          query.andWhere(
-            '(LOWER(product.name) LIKE LOWER(:keyword) OR LOWER(product.description) LIKE LOWER(:keyword) OR LOWER(category.name) LIKE LOWER(:keyword))',
-            {
-              keyword: `%${params.keyword.toLowerCase()}%`,
-            },
-          );
-        }
-
-        // Pagination logic
-        const page = params.page || 1;
-        const limit = params.limit || 10;
-        const offset = (page - 1) * limit;
-
-        // Apply sorting (default to 'created_at' descending)
-        if (params.sort === 'top seller') {
-          // Sorting is already done in the procedure (based on quantity sold)
-          // So no additional sorting needed here
-        } else if (params.sort === 'price') {
-          query.orderBy('product.price', 'ASC');
-        } else if (params.sort === 'reorder_point') {
-          query.orderBy('product.reorder_point', 'ASC');
-        } else {
-          query.orderBy('product.created_at', 'DESC');
-        }
-
-        query.skip(offset).take(limit);
-
-        // Execute the query to get paginated products
-        [result, total] = await query.getManyAndCount();
+        productIds = allProductsResult.map((product) => product.id);
+        total = productIds.length;
       }
 
-      // Pagination logic
-      const numberOfPages = Math.ceil(total / (params.limit || 10));
+      // Fetch products and apply additional filters
+      const [result, totalCount] = await this.getFilteredProducts(
+        params,
+        productIds,
+        total,
+      );
+
+      // Return the paginated result
+      const numberOfPages = Math.ceil(totalCount / (params.limit || 10));
       const hasNext = params.page < numberOfPages;
       const hasPrevious = params.page > 1;
 
       return new PaginatedResult<Product>(
         result,
-        total,
+        totalCount,
         numberOfPages,
         hasNext,
         hasPrevious,
@@ -143,13 +94,83 @@ export class ProductService {
         params.page || 1,
       );
     } catch (error) {
-      // Handle any errors
       throw new Error(`Error fetching products: ${error.message}`);
     } finally {
-      // Commit the transaction and release the query runner
       await queryRunner.commitTransaction();
       await queryRunner.release();
     }
+  }
+
+  private async getFilteredProducts(
+    params: ProductSearchDto,
+    productIds: string[],
+    tempTotal: number,
+  ): Promise<[Product[], number]> {
+    const query = this.productRepo
+      .createQueryBuilder('product')
+      .leftJoinAndSelect('product.category', 'category');
+
+    // Apply filters
+    if (params.name) {
+      query.andWhere('product.name = :name', { name: params.name });
+    }
+
+    if (params.price) {
+      query.andWhere('product.price = :price', { price: params.price });
+    }
+
+    if (params.reorder_point) {
+      query.andWhere('product.reorder_point = :reorder_point', {
+        reorder_point: params.reorder_point,
+      });
+    }
+
+    if (params.description) {
+      query.andWhere('product.description = :description', {
+        description: params.description,
+      });
+    }
+
+    if (params.category) {
+      query.andWhere('category.name = :categoryName', {
+        categoryName: params.category,
+      });
+    }
+
+    if (params.keyword) {
+      query.andWhere(
+        '(LOWER(product.name) LIKE LOWER(:keyword) OR LOWER(product.description) LIKE LOWER(:keyword) OR LOWER(category.name) LIKE LOWER(:keyword))',
+        { keyword: `%${params.keyword.toLowerCase()}%` },
+      );
+    }
+
+    // Handle productIds filter
+    if (params.sort === 'top seller' && productIds.length) {
+      query.andWhere('product.id IN (:...productIds)', { productIds });
+    }
+
+    // Pagination logic
+    const page = params.page || 1;
+    const limit = params.limit || 10;
+    const offset = (page - 1) * limit;
+
+    // Apply sorting
+    if (params.sort === 'price') {
+      query.orderBy('product.price', 'ASC');
+    } else if (params.sort === 'reorder_point') {
+      query.orderBy('product.reorder_point', 'ASC');
+    } else {
+      query.orderBy('product.created_at', 'DESC');
+    }
+
+    query.skip(offset).take(limit);
+
+    // Fetch results and count
+    if (params.sort === 'top seller') {
+      return [await query.getMany(), tempTotal];
+    }
+
+    return query.getManyAndCount();
   }
 
   async checkParitalProduct(product: Product & ProductCreateDto) {
