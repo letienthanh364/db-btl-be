@@ -61,15 +61,6 @@ export class ProductService {
 
         productIds = tempResult.map((row) => row.product_id);
         total = productIds.length;
-      } else {
-        // If no params.sort, fetch all product IDs
-        const allProductsResult = await this.productRepo
-          .createQueryBuilder('product')
-          .select('product.id')
-          .getMany();
-
-        productIds = allProductsResult.map((product) => product.id);
-        total = productIds.length;
       }
 
       // Fetch products and apply additional filters
@@ -79,7 +70,7 @@ export class ProductService {
         total,
       );
 
-      // Return the paginated result
+      // Pagination logic
       const numberOfPages = Math.ceil(totalCount / (params.limit || 10));
       const hasNext = params.page < numberOfPages;
       const hasPrevious = params.page > 1;
@@ -159,9 +150,9 @@ export class ProductService {
       query.orderBy('product.price', 'ASC');
     } else if (params.sort === 'reorder_point') {
       query.orderBy('product.reorder_point', 'ASC');
-    } else {
-      query.orderBy('product.created_at', 'DESC');
     }
+
+    query.orderBy('product.created_at', 'DESC');
 
     query.skip(offset).take(limit);
 
