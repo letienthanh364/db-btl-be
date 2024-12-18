@@ -28,8 +28,10 @@ export class AddressService {
       });
     }
 
-    if (params.city) {
-      query.andWhere('address.city = :city', { city: params.city });
+    if (params.province) {
+      query.andWhere('address.province = :province', {
+        province: params.province,
+      });
     }
 
     if (params.district) {
@@ -75,7 +77,7 @@ export class AddressService {
         let existingAddress = await this.addressRepo.findOne({
           where: {
             default_flag: address.default_flag,
-            city: address.city,
+            province: address.province,
             district: address.district,
           },
         });

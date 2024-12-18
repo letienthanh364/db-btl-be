@@ -17,57 +17,32 @@ import { PAGINATION_LIMIT } from 'src/common/paginated-result';
 export class ProductController {
   constructor(private readonly productService: ProductService) {}
 
-  @Post('')
-  async create(@Body() data: ProductCreateDto[]) {
-    return this.productService.create(data);
-  }
-
   @Get('')
   async search(
-    @Query('name') name?: string,
     @Query('keyword') keyword?: string,
-    @Query('price') price?: number,
-    @Query('reorder_point') reorder_point?: number,
-    @Query('description') description?: string,
     @Query('category') category?: string,
-    @Query('sort') sort?: string,
-    @Query('minQuantity') minQuantity?: number,
+    @Query('size') size?: string,
+    @Query('color') color?: string,
+    @Query('priceMin') priceMin?: number,
+    @Query('priceMax') priceMax?: number,
     @Query('page') page?: number,
     @Query('limit') limit?: number,
   ) {
     const searchDto: ProductSearchDto = {
-      name,
       keyword,
-      price,
-      reorder_point,
-      description,
-      sort,
-      minQuantity,
+      priceMin,
+      priceMax,
+      size,
+      color,
       category: category && category.toLowerCase(),
       page: page || 1,
       limit: limit || PAGINATION_LIMIT,
     };
-    return this.productService.search(searchDto);
+    return this.productService.searchProducts(searchDto);
   }
 
   @Get(':id')
   async getById(@Param('id') id: string) {
     return this.productService.findOne(id);
-  }
-
-  @Put(':id')
-  async update(
-    @Param('id') id: string,
-    @Body() productData: Partial<ProductCreateDto>,
-  ) {
-    return this.productService.update(id, productData);
-  }
-
-  @Delete(':id')
-  async delete(@Param('id') id: string) {
-    await this.productService.delete(id);
-    return {
-      message: `Product with ID "${id}" has been deleted successfully.`,
-    };
   }
 }

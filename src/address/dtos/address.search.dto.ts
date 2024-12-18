@@ -3,7 +3,7 @@ import { PAGINATION_LIMIT } from 'src/common/paginated-result';
 import { Address } from '../address.entity';
 
 export class AddressSearchDto extends PartialType(
-  PickType(Address, ['default_flag', 'city', 'district'] as const),
+  PickType(Address, ['default_flag', 'province', 'district'] as const),
 ) {
   @ApiPropertyOptional({
     description: 'Page number for pagination',

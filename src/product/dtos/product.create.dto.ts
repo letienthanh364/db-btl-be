@@ -5,9 +5,14 @@ export class ProductCreateDto extends PickType(Product, [
   'name',
   'description',
   'price',
-  'inventory_quantity',
-  'image_url',
-  'reorder_point',
+  'color',
+  'size',
+  'genderSuit',
+  'model',
+  'branch',
+  'imageUrl',
+  'inventoryQuantity',
+  'discount',
 ] as const) {
   category_id: string;
 }

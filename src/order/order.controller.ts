@@ -1,104 +1,39 @@
-import {
-  Body,
-  Controller,
-  ForbiddenException,
-  Get,
-  Param,
-  ParseUUIDPipe,
-  Patch,
-  Post,
-  Put,
-  Query,
-  Req,
-  UseGuards,
-} from '@nestjs/common';
+import { Body, Controller, Param, Post, ParseUUIDPipe } from '@nestjs/common';
 import { OrderService } from './order.service';
 import { OrderCreateDto } from './dtos/order.create.dto';
-import { OrderSearchDto } from './dtos/order.search.dto';
-import { PAGINATION_LIMIT } from 'src/common/paginated-result';
-import { OrderStatus } from 'src/common/decorator/order_status';
-import { Roles, UserRole } from 'src/common/decorator/user_role';
-import { JwtAuthGuard } from 'src/common/auth/strategy';
-import { RolesGuard } from 'src/common/auth/role_guard';
-import { RequestUser } from 'src/user/user.controller';
-import { OrderProductUpdateDto } from './dtos/order.update.dto';
 
 @Controller('order')
 export class OrderController {
   constructor(private readonly orderService: OrderService) {}
 
+  /**
+   * Create a new order and process payment
+   */
   @Post('')
-  async create(@Body() data: OrderCreateDto) {
-    return this.orderService.create(data);
-  }
+  async createOrder(@Body() data: OrderCreateDto) {
+    const order = await this.orderService.createOrderAndProcessPayment(data);
 
-  @Get('')
-  async search(
-    @Query('user_id') user_id?: string,
-    @Query('product_id') product_id?: string,
-    @Query('status') status?: OrderStatus,
-    @Query('order_date') order_date?: Date,
-    @Query('page') page: number = 1,
-    @Query('limit') limit: number = PAGINATION_LIMIT,
-  ) {
-    const searchDto: OrderSearchDto = {
-      user_id,
-      status,
-      page: page || 1,
-      limit: limit || PAGINATION_LIMIT,
+    // await this.orderService.sendOrderConfirmationEmail(
+    //   order.id,
+    //   data.customerEmail,
+    // );
+
+    return {
+      success: true,
+      order: order,
     };
-    return this.orderService.search(searchDto, true);
   }
 
-  // @Get('')
-  // async searchByStatusAndDate(
-  //   @Query('user_id') user_id?: string,
-  //   @Query('status') status?: OrderStatus,
-  //   @Query('start_date') start_date?: Date,
-  //   @Query('end_date') end_date?: Date,
-  //   @Query('page') page: number = 1,
-  //   @Query('limit') limit: number = PAGINATION_LIMIT,
-  // ) {
-  //   const searchDto: OrderSearchDto = {
-  //     user_id,
-  //     status,
-  //     start_date,
-  //     end_date,
-  //     page: page || 1,
-  //     limit: limit || PAGINATION_LIMIT,
-  //   };
-  //   return this.orderService.search(searchDto, true);
-  // }
-
-  @Get(':id')
-  async getById(@Param('id') id: string) {
-    return this.orderService.findOne(id);
-  }
-
-  // Endpoint to update order status
-  @Put(':id')
-  @Roles(UserRole.Employee, UserRole.Manager, UserRole.Admin)
-  @UseGuards(JwtAuthGuard, RolesGuard) // Ensuring that the request is authenticated and authorized
-  async updateStatus(
-    @Param('id', ParseUUIDPipe) id: string, // Ensure the id is a valid UUID
-    @Body('status') status: OrderStatus, // The new status to update
-    @Req() req: RequestUser, // Get the current user from the request
+  @Post(':orderID/send-confirmation')
+  async sendConfirmation(
+    @Param('orderID', ParseUUIDPipe) orderID: string,
+    @Body('email') email: string,
   ) {
-    if (req.user?.authority_group === UserRole.Customer) {
-      throw new ForbiddenException(
-        'Only users with proper authority can update order status',
-      );
-    }
+    await this.orderService.sendOrderConfirmationEmail(orderID, email);
 
-    // Proceed with updating the status
-    return this.orderService.updateStatus(id, status);
-  }
-
-  @Patch(':id')
-  async updateOrder(
-    @Param('id') orderId: string,
-    @Body() orderProductUpdates: OrderProductUpdateDto[],
-  ) {
-    return this.orderService.updateOrder(orderId, orderProductUpdates);
+    return {
+      success: true,
+      message: 'Order confirmation email will be sent shortly.',
+    };
   }
 }

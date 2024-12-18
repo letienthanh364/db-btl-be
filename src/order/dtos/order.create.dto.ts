@@ -1,13 +1,22 @@
-export class OrderCreateDto {
+import { PickType } from '@nestjs/swagger';
+import { Order } from '../order.entity';
+
+export class OrderCreateDto extends PickType(Order, [
+  'address',
+  'customerName',
+  'customerPhone',
+  'customerEmail',
+  'province',
+  'district',
+  'commune',
+  'address',
+  'housingType',
+]) {
   user_id: string;
 
-  address: string;
-
-  use_discount?: boolean;
-
-  order_products: {
-    product_id: string;
+  orderProducts: {
+    productId: string;
     quantity: number;
-    unit_price: number;
+    unitPrice: number;
   }[];
 }

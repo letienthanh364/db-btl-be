@@ -19,14 +19,29 @@ export class Product extends BaseEntity {
   @Column({ type: 'float' })
   price: number;
 
+  @Column({ type: 'varchar' })
+  color: string;
+
+  @Column({ type: 'int' })
+  size: string;
+
+  @Column({ type: 'varchar' })
+  genderSuit: string;
+
+  @Column({ type: 'varchar' })
+  model: string;
+
+  @Column({ type: 'varchar' })
+  branch: string;
+
   @Column({ type: 'varchar', nullable: true })
-  image_url: string;
+  imageUrl: string;
 
   @Column({ type: 'int' })
-  inventory_quantity: number;
+  inventoryQuantity: number;
 
-  @Column({ type: 'int' })
-  reorder_point: number;
+  @Column({ type: 'float' })
+  discount: number;
 
   @ManyToOne(() => ProductCategory)
   @JoinColumn({ name: 'category_id', referencedColumnName: 'id' })

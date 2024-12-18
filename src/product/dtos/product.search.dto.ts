@@ -4,7 +4,7 @@ import { PAGINATION_LIMIT } from 'src/common/paginated-result';
 import { Optional } from '@nestjs/common';
 
 export class ProductSearchDto extends PartialType(
-  PickType(Product, ['name', 'price', 'reorder_point', 'description'] as const),
+  PickType(Product, ['size', 'color'] as const),
 ) {
   @Optional()
   category?: string;
@@ -13,10 +13,10 @@ export class ProductSearchDto extends PartialType(
   keyword?: string;
 
   @Optional()
-  sort?: string;
+  priceMin?: number;
 
   @Optional()
-  minQuantity?: number;
+  priceMax?: number;
 
   @ApiPropertyOptional({
     description: 'Page number for pagination',

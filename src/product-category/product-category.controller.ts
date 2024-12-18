@@ -13,22 +13,8 @@ export class ProductCategoryController {
     return this.categoryService.create(data);
   }
 
-  @Get('')
-  async search(
-    @Query('name') name?: string,
-    @Query('page') page?: number,
-    @Query('limit') limit?: number,
-  ) {
-    const searchDto: ProductCategorySearchDto = {
-      name,
-      page: page || 1,
-      limit: limit || PAGINATION_LIMIT,
-    };
-    return this.categoryService.search(searchDto);
-  }
-
-  @Get(':id')
-  async getById(@Param() id: string) {
-    return this.categoryService.findOne(id);
+  @Get()
+  getAllCategories() {
+    return this.categoryService.getAllCategories();
   }
 }

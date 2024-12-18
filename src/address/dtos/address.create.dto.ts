@@ -3,7 +3,8 @@ import { Address } from '../address.entity';
 
 export class AddressCreateDto extends PickType(Address, [
   'default_flag',
-  'city',
+  'province',
   'district',
-  'other_details',
+  'commune',
+  'address',
 ] as const) {}

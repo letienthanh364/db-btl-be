@@ -1,59 +1,53 @@
-import { Column, Entity, JoinColumn, ManyToOne, OneToMany } from 'typeorm';
+import { Column, Entity, OneToMany } from 'typeorm';
 import { BaseEntity } from '../common/base_entity';
-import { ApiProperty, OmitType, PickType } from '@nestjs/swagger';
-import { UserRole } from 'src/common/decorator/user_role';
+import { ApiProperty, PickType, OmitType } from '@nestjs/swagger';
 import { IsOptional } from 'class-validator';
-import { Membership } from 'src/membership/membership.entity';
 import { Address } from 'src/address/address.entity';
 
 @Entity('User')
 export class User extends BaseEntity {
-  @Column({
-    type: 'varchar',
-  })
-  name: string;
-
+  @ApiProperty({ description: 'Username of the user' })
   @Column({ type: 'varchar', unique: true })
-  email: string;
+  username: string;
 
+  @ApiProperty({ description: 'Password of the user' })
   @Column({ type: 'varchar' })
   password: string;
 
-  @ApiProperty({ description: 'The role of the user', enum: UserRole })
-  @Column({
-    type: 'enum',
-    enum: UserRole,
-    default: UserRole.Customer,
-  })
-  @IsOptional()
-  authority_group: UserRole;
+  @ApiProperty({ description: 'Registration date of the user' })
+  @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
+  registrationDate: Date;
 
+  @ApiProperty({ description: 'First name of the user' })
+  @Column({ type: 'varchar' })
+  firstName: string;
+
+  @ApiProperty({ description: 'Last name of the user' })
+  @Column({ type: 'varchar' })
+  lastName: string;
+
+  @ApiProperty({ description: 'Gender of the user' })
+  @Column({ type: 'varchar' })
+  gender: string;
+
+  @ApiProperty({ description: 'Email of the user' })
+  @Column({ type: 'varchar', unique: true })
+  email: string;
+
+  @ApiProperty({ description: 'Phone number of the user' })
   @Column({ type: 'varchar' })
   phone: string;
 
-  @Column({ type: 'varchar', nullable: true, default: '' })
-  department: string;
-
-  @Column({ type: 'varchar', nullable: true, default: '' })
-  position: string;
-
-  @Column({ type: 'int', nullable: true, default: 0 })
-  point: string;
-
-  @ManyToOne(() => Membership, { nullable: true })
-  @JoinColumn({ name: 'membership_id', referencedColumnName: 'id' })
-  membership: Membership;
-
   @OneToMany(() => Address, (address) => address.user, { nullable: true })
-  address: Address;
+  addresses: Address[];
 }
 
-export class Employee extends OmitType(User, ['point']) {}
-
-export class Customer extends OmitType(User, [
-  'department',
-  'position',
-  'authority_group',
+export class Customer extends PickType(User, [
+  'username',
+  'firstName',
+  'lastName',
+  'email',
+  'phone',
 ]) {}
 
-export class UserSimple extends PickType(User, ['id', 'name']) {}
+export class UserSimple extends PickType(User, ['id', 'username', 'email']) {}

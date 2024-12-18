@@ -10,48 +10,18 @@ import { PaginatedResult } from 'src/common/paginated-result';
 export class ProductCategoryService {
   constructor(
     @InjectRepository(ProductCategory)
-    private readonly categoryRepo: Repository<ProductCategory>,
+    private readonly categoryRepository: Repository<ProductCategory>,
     private readonly dataSource: DataSource,
   ) {}
 
   // ! Find by id
   async findOne(id: string): Promise<ProductCategory> {
-    return this.categoryRepo.findOneBy({ id });
+    return this.categoryRepository.findOneBy({ id });
   }
 
   // ! Search with params
-  async search(
-    params: ProductCategorySearchDto,
-  ): Promise<PaginatedResult<ProductCategory>> {
-    const query = this.categoryRepo.createQueryBuilder('category');
-    if (params.name) {
-      query.andWhere('category.name = :name', {
-        name: params.name,
-      });
-    }
-
-    // Pagination logic
-    const page = params.page;
-    const limit = params.limit;
-    const offset = (page - 1) * limit;
-
-    query.skip(offset).take(limit);
-
-    const [result, total] = await query.getManyAndCount();
-
-    const numberOfPages = Math.ceil(total / limit);
-    const hasNext = page < numberOfPages;
-    const hasPrevious = page > 1;
-
-    return new PaginatedResult<ProductCategory>(
-      result,
-      total,
-      numberOfPages,
-      hasNext,
-      hasPrevious,
-      limit,
-      page,
-    );
+  async getAllCategories(): Promise<ProductCategory[]> {
+    return this.categoryRepository.find();
   }
 
   // ! Create multiples
@@ -65,7 +35,7 @@ export class ProductCategoryService {
 
       const categoryPromises = newCategories.map(async (cate) => {
         const lowercasedName = cate.name.toLowerCase();
-        let existingAddress = await this.categoryRepo.findOne({
+        let existingAddress = await this.categoryRepository.findOne({
           where: {
             name: lowercasedName,
           },

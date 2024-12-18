@@ -13,12 +13,14 @@ export class Address extends BaseEntity {
   default_flag: boolean;
 
   @Column({ type: 'varchar' })
-  city: string;
+  province: string;
 
   @Column({ type: 'varchar' })
   district: string;
 
-  @Optional()
-  @Column({ type: 'varchar', default: '' })
-  other_details: string;
+  @Column({ type: 'varchar' })
+  commune: string;
+
+  @Column({ type: 'varchar' })
+  address: string;
 }

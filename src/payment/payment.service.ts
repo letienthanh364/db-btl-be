@@ -109,10 +109,6 @@ export class PaymentService {
 
     const newPayment = await this.paymentRepo.save(payment);
 
-    // ? Update the order state
-    order.status = OrderStatus.BeingDeliveried; // Adjust this to the appropriate status enum or value
-    await this.orderRepo.save(order);
-
     return { ...newPayment, order: order };
   }
 }

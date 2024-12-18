@@ -1,4 +1,3 @@
-import { IsOptional } from 'class-validator';
 import { BaseEntity } from 'src/common/base_entity';
 import { OrderStatus } from 'src/common/decorator/order_status';
 import { Product } from 'src/product/product.entity';
@@ -16,6 +15,7 @@ import {
 } from 'typeorm';
 
 import * as moment from 'moment-timezone'; // Ensure you're using moment-timezone
+import { Optional } from '@nestjs/common';
 
 @Entity('Order')
 export class Order extends BaseEntity {
@@ -27,30 +27,37 @@ export class Order extends BaseEntity {
   order_date: Date;
 
   @Column({ type: 'varchar' })
+  customerName: string;
+
+  @Column({ type: 'varchar' })
+  customerPhone: string;
+
+  @Column({ type: 'varchar' })
+  customerEmail: string;
+
+  @Column({ type: 'varchar' })
+  province: string;
+
+  @Column({ type: 'varchar' })
+  district: string;
+
+  @Column({ type: 'varchar' })
+  commune: string;
+
+  @Column({ type: 'varchar' })
   address: string;
 
-  @Column({
-    type: 'enum',
-    enum: OrderStatus,
-    default: OrderStatus.AwaitPayment,
-  })
-  @IsOptional()
-  status: OrderStatus;
+  @Column({ type: 'varchar' })
+  housingType: string;
 
   @Column({ type: 'float' })
-  original_amount: number;
+  totalAmount: number;
 
   @Column({ type: 'float' })
-  deduct_rate: number;
+  totalFee: number;
 
   @Column({ type: 'float' })
-  deduct_amount: number;
-
-  @Column({ type: 'float' })
-  remain_amount: number;
-
-  @Column({ type: 'float' })
-  tax: number;
+  totalDiscount: number;
 
   @OneToMany(() => OrderProduct, (orderProduct) => orderProduct.order)
   order_products: OrderProduct[];
@@ -77,16 +84,16 @@ export class Order extends BaseEntity {
 @Entity('OrderProduct')
 export class OrderProduct extends BaseEntity {
   @ManyToOne(() => Order)
-  @JoinColumn({ name: 'order_id' })
+  @JoinColumn({ name: 'orderId' })
   order: Order;
 
   @ManyToOne(() => Product)
-  @JoinColumn({ name: 'product_id', referencedColumnName: 'id' })
+  @JoinColumn({ name: 'productId', referencedColumnName: 'id' })
   product: Product;
 
   @Column({ type: 'int' })
   quantity: number;
 
   @Column({ type: 'float' })
-  unit_price: number;
+  unitPrice: number;
 }
